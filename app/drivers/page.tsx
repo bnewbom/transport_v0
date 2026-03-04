@@ -1,11 +1,7 @@
 'use client';
 import React from 'react';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-<<<<<<< codex/implement-mvp-features-for-transport-saas-4qlv1t
 import { PageContent, StatCard } from '@/components/layout-shell';
-=======
-import { PageContent } from '@/components/layout-shell';
->>>>>>> main
 import { DataList, Badge } from '@/components/data-list';
 import { ModalForm } from '@/components/crud/modal-form';
 import { FormField } from '@/components/crud/form-field';
@@ -71,20 +67,12 @@ export default function DriversPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.drivers')} />}>
       <PageContent>
-<<<<<<< codex/implement-mvp-features-for-transport-saas-4qlv1t
         <div className="mb-4 grid gap-4 md:grid-cols-4">
-=======
-        <Grid columns={4} className="mb-4">
->>>>>>> main
           <StatCard label="전체 기사" value={rows.length} />
           <StatCard label="재직" value={rows.filter((x) => x.status === 'active').length} />
           <StatCard label="휴직" value={rows.filter((x) => x.status === 'leave' || x.status === 'on-leave').length} />
           <StatCard label="퇴사/비활성" value={rows.filter((x) => x.status === 'resigned' || x.status === 'inactive').length} />
-<<<<<<< codex/implement-mvp-features-for-transport-saas-4qlv1t
         </div>
-=======
-        </Grid>
->>>>>>> main
 
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex gap-2">
