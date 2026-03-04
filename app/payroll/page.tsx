@@ -29,6 +29,7 @@ export default function PayrollPage() {
     setRows(repositories.payroll.getAll());
   }, []);
 
+  const load = React.useCallback(() => setRows(repositories.payroll.getAll()), []);
   React.useEffect(() => {
     ensureSeedData();
     loadPayrollRows();
