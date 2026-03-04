@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent } from '@/components/layout-shell';
+import { PageContent, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { ModalForm } from '@/components/crud/modal-form';
 import { FormField } from '@/components/crud/form-field';
@@ -57,12 +57,12 @@ export default function RoutesPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.routes')} />}>
       <PageContent>
-        <Grid columns={4} className="mb-4">
+        <div className="mb-4 grid gap-4 md:grid-cols-4">
           <StatCard label="전체 노선" value={rows.length} />
           <StatCard label="활성" value={rows.filter((x) => x.status === 'active').length} />
           <StatCard label="주간" value={rows.filter((x) => x.shiftType === 'day').length} />
           <StatCard label="야간" value={rows.filter((x) => x.shiftType === 'night').length} />
-        </Grid>
+        </div>
 
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex gap-2">
