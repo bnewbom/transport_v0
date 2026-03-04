@@ -2,21 +2,12 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent } from '@/components/layout-shell';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -35,10 +26,10 @@ export default function ReportsPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Reports"
+          title={t('nav.reports')}
           rightContent={
             <button
               onClick={handleLogout}

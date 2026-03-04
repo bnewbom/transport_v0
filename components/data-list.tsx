@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 
 interface DataListColumn<T> {
   key: keyof T;
@@ -25,7 +26,7 @@ export function DataList<T extends { id: string }>({
   data,
   columns,
   isLoading = false,
-  emptyMessage = 'No data found',
+  emptyMessage = t('common.noData'),
   onRowClick,
   actions,
   className,
@@ -74,7 +75,7 @@ export function DataList<T extends { id: string }>({
                   {col.sortable && <span className="ml-1 text-xs opacity-50">↕</span>}
                 </th>
               ))}
-              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Actions</th>}
+              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">{t('common.actions')}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">

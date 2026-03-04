@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { t } from '@/lib/i18n';
 
 interface ConfirmDeleteDialogProps {
   isOpen: boolean;
@@ -44,24 +45,24 @@ export function ConfirmDeleteDialog({
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {entityName}</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialog.deleteTitle')} ({entityName})</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete <strong>{displayValue}</strong>? This action cannot be undone.
+            <strong>{displayValue}</strong> 항목을 삭제하시겠습니까? {t('dialog.cannotUndo')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="py-4 text-sm text-muted-foreground">
-          Entity: <span className="font-mono text-foreground">{displayValue}</span>
+          대상: <span className="font-mono text-foreground">{displayValue}</span>
         </div>
         <div className="flex justify-end gap-3">
           <AlertDialogCancel disabled={confirming || isLoading}>
-            Cancel
+            {t('common.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={confirming || isLoading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {confirming || isLoading ? 'Deleting...' : 'Delete'}
+            {confirming || isLoading ? `${t('common.delete')}...` : t('common.delete')}
           </AlertDialogAction>
         </div>
       </AlertDialogContent>

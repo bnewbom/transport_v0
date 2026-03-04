@@ -3,24 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { dataService, initializeMockData } from '@/lib/data-service';
 import { formatKRW, formatDateTime, getStatusColor, getStatusLabel } from '@/lib/formatters';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -62,10 +53,10 @@ export default function DashboardPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Dashboard"
+          title={t('nav.dashboard')}
           rightContent={
             <button
               onClick={handleLogout}
@@ -81,24 +72,24 @@ export default function DashboardPage() {
         {/* KPI Stats */}
         <Grid columns={4} gap="md" className="mb-12">
           <StatCard
-            label="Total Income"
+            label={t('pages.dashboard.totalIncome')}
             value={formatKRW(stats.totalIncome)}
             icon="💵"
             trend={{ value: 12.5, isPositive: true }}
           />
           <StatCard
-            label="Total Expense"
+            label={t('pages.dashboard.totalExpense')}
             value={formatKRW(stats.totalExpense)}
             icon="💸"
             trend={{ value: -3.2, isPositive: false }}
           />
           <StatCard
-            label="Active Dispatches"
+            label={t('pages.dashboard.activeDispatches')}
             value={stats.activeDispatches}
             icon="📦"
           />
           <StatCard
-            label="Completed Today"
+            label={t('pages.dashboard.completedToday')}
             value={stats.completedToday}
             icon="✅"
           />

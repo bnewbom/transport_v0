@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -14,18 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function RoutesPage() {
   const router = useRouter();
@@ -115,15 +106,15 @@ export default function RoutesPage() {
     try {
       if (editingRoute) {
         repositories.routes.update(editingRoute.id, formData);
-        toast.success('Route updated', 'Changes have been saved successfully');
+        toast.success('노선 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.routes.create(formData as Omit<Route, 'id'>);
-        toast.success('Route created', 'New route has been added');
+        toast.success('노선 등록 완료', '새 노선이 추가되었습니다');
       }
       loadRoutes();
       setIsDrawerOpen(false);
     } catch (error) {
-      toast.error('Failed to save route', 'Please try again');
+      toast.error('노선 저장 실패', t('common.retry'));
     }
   };
 
@@ -136,12 +127,12 @@ export default function RoutesPage() {
     if (!deletingRoute) return;
     try {
       repositories.routes.delete(deletingRoute.id);
-      toast.success('Route deleted', 'The route has been removed');
+      toast.success('노선 삭제 완료', '노선이 삭제되었습니다');
       loadRoutes();
       setDeleteDialogOpen(false);
       setDeletingRoute(null);
     } catch (error) {
-      toast.error('Failed to delete route', 'Please try again');
+      toast.error('노선 삭제 실패', t('common.retry'));
     }
   };
 
@@ -165,10 +156,10 @@ export default function RoutesPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Routes"
+          title={t('nav.routes')}
           rightContent={
             <button
               onClick={handleLogout}
@@ -183,10 +174,10 @@ export default function RoutesPage() {
       <PageContent>
         {/* Stats */}
         <Grid columns={4} gap="md" className="mb-8">
-          <StatCard label="Total Routes" value={routes.length} icon="🗺" />
-          <StatCard label="Active Routes" value={activeCount} icon="✅" />
-          <StatCard label="Total Distance" value={`${totalDistance} km`} icon="📏" />
-          <StatCard label="Avg Base Rate" value={formatKRW(avgRate)} icon="💰" />
+          <StatCard label="전체 노선" value={routes.length} icon="🗺" />
+          <StatCard label="활성 노선" value={activeCount} icon="✅" />
+          <StatCard label="총 거리" value={`${totalDistance} km`} icon="📏" />
+          <StatCard label="평균 기본요금" value={formatKRW(avgRate)} icon="💰" />
         </Grid>
 
         {/* Filter & Actions */}
@@ -194,7 +185,7 @@ export default function RoutesPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search routes..."
+              placeholder="노선 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
@@ -281,13 +272,13 @@ export default function RoutesPage() {
       {/* Create/Edit Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
-        title={editingRoute ? 'Edit Route' : 'Add New Route'}
+        title={editingRoute ? '노선 수정' : '노선 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveRoute}
         submitLabel={editingRoute ? 'Update' : 'Create'}
       >
         <FormField
-          label="Route Name"
+          label="노선명"
           error={formErrors.name}
           required
         >
@@ -296,12 +287,12 @@ export default function RoutesPage() {
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="e.g., Seoul-Incheon Express"
+            placeholder="예: 서울-인천 고속"
           />
         </FormField>
 
         <FormField
-          label="Start Location"
+          label="출발지"
           error={formErrors.startLocation}
           required
         >
@@ -310,12 +301,12 @@ export default function RoutesPage() {
             value={formData.startLocation}
             onChange={(e) => setFormData({...formData, startLocation: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter start location"
+            placeholder="출발지를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="End Location"
+          label="도착지"
           error={formErrors.endLocation}
           required
         >
@@ -324,12 +315,12 @@ export default function RoutesPage() {
             value={formData.endLocation}
             onChange={(e) => setFormData({...formData, endLocation: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter end location"
+            placeholder="도착지를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Distance (km)"
+          label="거리(km)"
           error={formErrors.distance}
           required
         >
@@ -339,12 +330,12 @@ export default function RoutesPage() {
             value={formData.distance}
             onChange={(e) => setFormData({...formData, distance: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter distance"
+            placeholder="거리를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Estimated Time (minutes)"
+          label="예상 소요시간(분)"
           error={formErrors.estimatedTime}
           required
         >
@@ -354,12 +345,12 @@ export default function RoutesPage() {
             value={formData.estimatedTime}
             onChange={(e) => setFormData({...formData, estimatedTime: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter estimated time"
+            placeholder="예상 시간을 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Base Rate (KRW)"
+          label="기본요금(원)"
           error={formErrors.baseRate}
           required
         >
@@ -369,7 +360,7 @@ export default function RoutesPage() {
             value={formData.baseRate}
             onChange={(e) => setFormData({...formData, baseRate: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter base rate"
+            placeholder="기본요금을 입력하세요"
           />
         </FormField>
 
@@ -389,7 +380,7 @@ export default function RoutesPage() {
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Route"
+        entityName="노선"
         displayValue={deletingRoute?.name || ''}
         onConfirm={handleConfirmDelete}
       />

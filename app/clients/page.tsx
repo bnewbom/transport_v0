@@ -3,6 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, PageHeader, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -15,18 +17,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function ClientsPage() {
   const router = useRouter();
@@ -69,9 +60,9 @@ export default function ClientsPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.name.trim()) errors.name = 'Name is required';
-    if (!formData.phone.trim()) errors.phone = 'Phone is required';
-    if (!formData.address.trim()) errors.address = 'Address is required';
+    if (!formData.name.trim()) errors.name = t('common.required');
+    if (!formData.phone.trim()) errors.phone = t('common.required');
+    if (!formData.address.trim()) errors.address = t('common.required');
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -106,17 +97,17 @@ export default function ClientsPage() {
         repositories.clients.update(editingClient.id, {
           ...formData,
         });
-        toast.success('Client updated', 'Changes have been saved successfully');
+        toast.success('거래처 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.clients.create({
           ...formData,
         } as Omit<Client, 'id' | 'createdAt'>);
-        toast.success('Client created', 'New client has been added');
+        toast.success('거래처 등록 완료', '새 거래처가 추가되었습니다');
       }
       loadClients();
       setIsDrawerOpen(false);
     } catch (error) {
-      toast.error('Failed to save client', 'Please try again');
+      toast.error('거래처 저장 실패', t('common.retry'));
     }
   };
 
@@ -129,12 +120,12 @@ export default function ClientsPage() {
     if (!deletingClient) return;
     try {
       repositories.clients.delete(deletingClient.id);
-      toast.success('Client deleted', 'The client has been removed');
+      toast.success('거래처 삭제 완료', '거래처가 삭제되었습니다');
       loadClients();
       setDeleteDialogOpen(false);
       setDeletingClient(null);
     } catch (error) {
-      toast.error('Failed to delete client', 'Please try again');
+      toast.error('거래처 삭제 실패', t('common.retry'));
     }
   };
 
@@ -156,10 +147,10 @@ export default function ClientsPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Clients"
+          title={t('nav.clients')}
           rightContent={
             <button
               onClick={handleLogout}
@@ -174,9 +165,9 @@ export default function ClientsPage() {
       <PageContent>
         {/* Stats */}
         <Grid columns={3} gap="md" className="mb-8">
-          <StatCard label="Total Clients" value={clients.length} icon="👥" />
-          <StatCard label="Active Clients" value={activeCount} icon="✅" />
-          <StatCard label="Inactive Clients" value={inactiveCount} icon="⏸" />
+          <StatCard label={`${t('nav.clients')} 수`} value={clients.length} icon="👥" />
+          <StatCard label="활성 거래처" value={activeCount} icon="✅" />
+          <StatCard label="비활성 거래처" value={inactiveCount} icon="⏸" />
         </Grid>
 
         {/* Filter & Actions */}
@@ -184,7 +175,7 @@ export default function ClientsPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search clients..."
+              placeholder="거래처 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
@@ -194,9 +185,9 @@ export default function ClientsPage() {
               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="all">{t('common.all')} {t('common.status')}</option>
+              <option value="active">{t('status.active')}</option>
+              <option value="inactive">{t('status.inactive')}</option>
             </select>
           </div>
           <Button
@@ -214,12 +205,12 @@ export default function ClientsPage() {
           columns={[
             {
               key: 'name',
-              label: 'Name',
+              label: '거래처명',
               render: (value) => <span className="font-medium">{value}</span>,
             },
             {
               key: 'phone',
-              label: 'Phone',
+              label: '연락처',
             },
             {
               key: 'address',
@@ -237,7 +228,7 @@ export default function ClientsPage() {
             },
             {
               key: 'createdAt',
-              label: 'Created',
+              label: '등록일',
               render: (value) => <span className="text-sm text-muted-foreground">{formatDate(value)}</span>,
             },
           ]}
@@ -265,13 +256,13 @@ export default function ClientsPage() {
       {/* Create/Edit Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
-        title={editingClient ? 'Edit Client' : 'Add New Client'}
+        title={editingClient ? '거래처 수정' : '거래처 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveClient}
-        submitLabel={editingClient ? 'Update' : 'Create'}
+        submitLabel={editingClient ? '수정' : '추가'}
       >
         <FormField
-          label="Client Name"
+          label="거래처명"
           error={formErrors.name}
           required
         >
@@ -280,12 +271,12 @@ export default function ClientsPage() {
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter client name"
+            placeholder="거래처명을 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Phone Number"
+          label="연락처"
           error={formErrors.phone}
           required
         >
@@ -299,7 +290,7 @@ export default function ClientsPage() {
         </FormField>
 
         <FormField
-          label="Address"
+          label="주소"
           error={formErrors.address}
           required
         >
@@ -308,18 +299,18 @@ export default function ClientsPage() {
             value={formData.address}
             onChange={(e) => setFormData({...formData, address: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter address"
+            placeholder="주소를 입력하세요"
           />
         </FormField>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as 'active' | 'inactive'})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="active">{t('status.active')}</option>
+            <option value="inactive">{t('status.inactive')}</option>
           </select>
         </FormField>
       </ModalForm>
@@ -328,7 +319,7 @@ export default function ClientsPage() {
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Client"
+        entityName="거래처"
         displayValue={deletingClient?.name || ''}
         onConfirm={handleConfirmDelete}
       />

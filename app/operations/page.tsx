@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -9,18 +11,7 @@ import { dataService, initializeMockData } from '@/lib/data-service';
 import { formatDate, formatDateTime, getStatusLabel } from '@/lib/formatters';
 import { OperationLog } from '@/lib/schemas';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function OperationsPage() {
   const router = useRouter();
@@ -49,10 +40,10 @@ export default function OperationsPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Operations"
+          title={t('nav.operations')}
           rightContent={
             <button
               onClick={handleLogout}
