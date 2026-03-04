@@ -1,8 +1,7 @@
 'use client';
-
 import React from 'react';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent, Grid, StatCard } from '@/components/layout-shell';
+import { PageContent } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { ModalForm } from '@/components/crud/modal-form';
 import { FormField } from '@/components/crud/form-field';
