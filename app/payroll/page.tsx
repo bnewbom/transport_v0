@@ -25,13 +25,15 @@ export default function PayrollPage() {
   const [rows, setRows] = React.useState<Payroll[]>([]);
   const [selected, setSelected] = React.useState<Payroll | null>(null);
 
-  const load = React.useCallback(() => setRows(repositories.payroll.getAll()), []);
+  const loadPayrollRows = React.useCallback(() => {
+    setRows(repositories.payroll.getAll());
+  }, []);
 
   const load = React.useCallback(() => setRows(repositories.payroll.getAll()), []);
   React.useEffect(() => {
     ensureSeedData();
-    load();
-  }, [load]);
+    loadPayrollRows();
+  }, [loadPayrollRows]);
 
   const generate = () => {
     const company = repositories.company.getAll()[0];
@@ -69,14 +71,14 @@ export default function PayrollPage() {
       recordChangeLog({ entityType: 'payroll', entityId: payroll.id, action: 'create', after: payroll });
     });
 
-    load();
+    loadPayrollRows();
   };
 
   const confirm = (row: Payroll) => {
     const before = { ...row };
     const updated = repositories.payroll.update(row.id, { status: 'confirmed' });
     if (updated) recordChangeLog({ entityType: 'payroll', entityId: row.id, action: 'confirm', before, after: updated });
-    load();
+    loadPayrollRows();
   };
 
   const rollback = (row: Payroll) => {
@@ -85,7 +87,7 @@ export default function PayrollPage() {
     const before = { ...row };
     const updated = repositories.payroll.update(row.id, { status: 'draft' });
     if (updated) recordChangeLog({ entityType: 'payroll', entityId: row.id, action: 'update', before, after: updated });
-    load();
+    loadPayrollRows();
   };
 
   const filteredRows: PayrollRow[] = rows
