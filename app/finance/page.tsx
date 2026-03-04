@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -14,23 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
 
-const CATEGORIES: Record<string, string[]> = {
-  income: ['route-revenue'],
-  expense: ['fuel', 'maintenance', 'salary', 'insurance', 'other'],
-};
 
 export default function FinancePage() {
   const router = useRouter();
@@ -76,7 +62,7 @@ export default function FinancePage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.description.trim()) errors.description = 'Description is required';
+    if (!formData.description.trim()) errors.description = t('common.required');
     if (formData.amount <= 0) errors.amount = 'Amount must be greater than 0';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -116,17 +102,17 @@ export default function FinancePage() {
         repositories.financialRecords.update(editingRecord.id, {
           ...formData,
         });
-        toast.success('Record updated', 'Changes have been saved successfully');
+        toast.success('거래 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.financialRecords.create({
           ...formData,
         } as Omit<FinancialRecord, 'id'>);
-        toast.success('Record created', 'New financial record has been added');
+        toast.success('거래 등록 완료', '새 거래가 추가되었습니다');
       }
       loadRecords();
       setIsDrawerOpen(false);
     } catch (error) {
-      toast.error('Failed to save record', 'Please try again');
+      toast.error('거래 저장 실패', t('common.retry'));
     }
   };
 
@@ -139,12 +125,12 @@ export default function FinancePage() {
     if (!deletingRecord) return;
     try {
       repositories.financialRecords.delete(deletingRecord.id);
-      toast.success('Record deleted', 'The financial record has been removed');
+      toast.success('거래 삭제 완료', '거래가 삭제되었습니다');
       loadRecords();
       setDeleteDialogOpen(false);
       setDeletingRecord(null);
     } catch (error) {
-      toast.error('Failed to delete record', 'Please try again');
+      toast.error('Failed to delete record', t('common.retry'));
     }
   };
 
@@ -171,10 +157,10 @@ export default function FinancePage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Finance"
+          title={t('nav.finance')}
           rightContent={
             <button
               onClick={handleLogout}

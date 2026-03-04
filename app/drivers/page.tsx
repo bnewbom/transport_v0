@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -14,18 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function DriversPage() {
   const router = useRouter();
@@ -71,9 +62,9 @@ export default function DriversPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.name.trim()) errors.name = 'Driver name is required';
-    if (!formData.phone.trim()) errors.phone = 'Phone is required';
-    if (!formData.licenseNumber.trim()) errors.licenseNumber = 'License number is required';
+    if (!formData.name.trim()) errors.name = t('common.required');
+    if (!formData.phone.trim()) errors.phone = t('common.required');
+    if (!formData.licenseNumber.trim()) errors.licenseNumber = t('common.required');
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -114,17 +105,17 @@ export default function DriversPage() {
         repositories.drivers.update(editingDriver.id, {
           ...formData,
         });
-        toast.success('Driver updated', 'Changes have been saved successfully');
+        toast.success('기사 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.drivers.create({
           ...formData,
         } as Omit<Driver, 'id'>);
-        toast.success('Driver created', 'New driver has been added');
+        toast.success('기사 등록 완료', '새 기사가 추가되었습니다');
       }
       loadDrivers();
       setIsDrawerOpen(false);
     } catch (error) {
-      toast.error('Failed to save driver', 'Please try again');
+      toast.error('기사 저장 실패', t('common.retry'));
     }
   };
 
@@ -137,12 +128,12 @@ export default function DriversPage() {
     if (!deletingDriver) return;
     try {
       repositories.drivers.delete(deletingDriver.id);
-      toast.success('Driver deleted', 'The driver has been removed');
+      toast.success('기사 삭제 완료', '기사가 삭제되었습니다');
       loadDrivers();
       setDeleteDialogOpen(false);
       setDeletingDriver(null);
     } catch (error) {
-      toast.error('Failed to delete driver', 'Please try again');
+      toast.error('기사 삭제 실패', t('common.retry'));
     }
   };
 
@@ -166,10 +157,10 @@ export default function DriversPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Drivers"
+          title={t('nav.drivers')}
           rightContent={
             <button
               onClick={handleLogout}
@@ -184,10 +175,10 @@ export default function DriversPage() {
       <PageContent>
         {/* Stats */}
         <Grid columns={4} gap="md" className="mb-8">
-          <StatCard label="Total Drivers" value={drivers.length} icon="👤" />
-          <StatCard label="Active" value={activeCount} icon="✅" />
-          <StatCard label="On Leave" value={onLeaveCount} icon="⏰" />
-          <StatCard label="Inactive" value={inactiveCount} icon="❌" />
+          <StatCard label="전체 기사" value={drivers.length} icon="👤" />
+          <StatCard label="활성" value={activeCount} icon="✅" />
+          <StatCard label="휴무" value={onLeaveCount} icon="⏰" />
+          <StatCard label="비활성" value={inactiveCount} icon="❌" />
         </Grid>
 
         {/* Filter & Actions */}
@@ -195,7 +186,7 @@ export default function DriversPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search drivers..."
+              placeholder="기사 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
@@ -205,7 +196,7 @@ export default function DriversPage() {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
+              <option value="all">{t('common.all')} {t('common.status')}</option>
               <option value="active">Active</option>
               <option value="on-leave">On Leave</option>
               <option value="inactive">Inactive</option>
@@ -284,13 +275,13 @@ export default function DriversPage() {
       {/* Create/Edit Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
-        title={editingDriver ? 'Edit Driver' : 'Add New Driver'}
+        title={editingDriver ? '기사 수정' : '기사 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveDriver}
         submitLabel={editingDriver ? 'Update' : 'Create'}
       >
         <FormField
-          label="Driver Name"
+          label="기사명"
           error={formErrors.name}
           required
         >
@@ -299,12 +290,12 @@ export default function DriversPage() {
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter driver name"
+            placeholder="기사명을 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Phone Number"
+          label="연락처"
           error={formErrors.phone}
           required
         >
@@ -318,7 +309,7 @@ export default function DriversPage() {
         </FormField>
 
         <FormField
-          label="License Number"
+          label="면허번호"
           error={formErrors.licenseNumber}
           required
         >
@@ -332,7 +323,7 @@ export default function DriversPage() {
         </FormField>
 
         <FormField
-          label="Join Date"
+          label="입사일"
           required
         >
           <input
@@ -344,7 +335,7 @@ export default function DriversPage() {
         </FormField>
 
         <FormField
-          label="Bank Account"
+          label="계좌번호"
           help="Optional: For payroll processing"
         >
           <input
@@ -357,7 +348,7 @@ export default function DriversPage() {
         </FormField>
 
         <FormField
-          label="Account Holder Name"
+          label="예금주"
           help="Optional: Name on bank account"
         >
           <input
@@ -365,7 +356,7 @@ export default function DriversPage() {
             value={formData.accountHolder}
             onChange={(e) => setFormData({...formData, accountHolder: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter account holder name"
+            placeholder="예금주를 입력하세요"
           />
         </FormField>
 
@@ -386,7 +377,7 @@ export default function DriversPage() {
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Driver"
+        entityName="기사"
         displayValue={deletingDriver?.name || ''}
         onConfirm={handleConfirmDelete}
       />

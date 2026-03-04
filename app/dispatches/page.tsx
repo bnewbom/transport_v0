@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -14,18 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function DispatchesPage() {
   const router = useRouter();
@@ -69,10 +60,10 @@ export default function DispatchesPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.routeId.trim()) errors.routeId = 'Route is required';
-    if (!formData.driverId.trim()) errors.driverId = 'Driver is required';
-    if (!formData.scheduledDate) errors.scheduledDate = 'Date is required';
-    if (!formData.scheduledTime) errors.scheduledTime = 'Time is required';
+    if (!formData.routeId.trim()) errors.routeId = t('common.required');
+    if (!formData.driverId.trim()) errors.driverId = t('common.required');
+    if (!formData.scheduledDate) errors.scheduledDate = t('common.required');
+    if (!formData.scheduledTime) errors.scheduledTime = t('common.required');
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -110,18 +101,18 @@ export default function DispatchesPage() {
           ...formData,
           scheduledDate: new Date(formData.scheduledDate),
         });
-        toast.success('Dispatch updated', 'Changes have been saved successfully');
+        toast.success('배차 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.dispatches.create({
           ...formData,
           scheduledDate: new Date(formData.scheduledDate),
         } as Omit<Dispatch, 'id' | 'changeLogs'>);
-        toast.success('Dispatch created', 'New dispatch has been scheduled');
+        toast.success('배차 등록 완료', '새 배차가 등록되었습니다');
       }
       loadDispatches();
       setIsModalOpen(false);
     } catch (error) {
-      toast.error('Failed to save dispatch', 'Please try again');
+      toast.error('배차 저장 실패', t('common.retry'));
     }
   };
 
@@ -134,12 +125,12 @@ export default function DispatchesPage() {
     if (!deletingDispatch) return;
     try {
       repositories.dispatches.delete(deletingDispatch.id);
-      toast.success('Dispatch deleted', 'The dispatch has been removed');
+      toast.success('배차 삭제 완료', '배차가 삭제되었습니다');
       loadDispatches();
       setDeleteDialogOpen(false);
       setDeletingDispatch(null);
     } catch (error) {
-      toast.error('Failed to delete dispatch', 'Please try again');
+      toast.error('Failed to delete dispatch', t('common.retry'));
     }
   };
 
@@ -178,10 +169,10 @@ export default function DispatchesPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Dispatches"
+          title={t('nav.dispatches')}
           rightContent={
             <button
               onClick={handleLogout}

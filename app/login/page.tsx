@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,8 +35,8 @@ export default function LoginPage() {
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-2xl font-bold text-primary">
             T
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Transport Hub</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Transportation Management System</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('auth.title')}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t('auth.subtitle')}</p>
         </div>
 
         {/* Login Form */}
@@ -43,7 +44,7 @@ export default function LoginPage() {
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-foreground">
-              Email Address
+              {t('auth.email')}
             </label>
             <input
               id="email"
@@ -58,7 +59,7 @@ export default function LoginPage() {
           {/* Password Field */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
-              Password
+              {t('auth.password')}
             </label>
             <input
               id="password"
@@ -79,7 +80,7 @@ export default function LoginPage() {
               className="h-4 w-4 rounded border-input accent-primary"
             />
             <label htmlFor="remember" className="ml-2 text-sm text-muted-foreground">
-              Remember me
+              {t('auth.rememberMe')}
             </label>
           </div>
 
@@ -89,16 +90,16 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? t('auth.signingIn') : t('auth.signIn')}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          <p>Demo credentials available above</p>
+          <p>{t('auth.demoCredentials')}</p>
           <p className="mt-2">
             <Link href="#" className="text-primary hover:underline">
-              Forgot your password?
+              {t('auth.forgotPassword')}
             </Link>
           </p>
         </div>
