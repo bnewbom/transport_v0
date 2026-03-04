@@ -26,7 +26,7 @@ export default function DispatchesPage() {
 
   // Form state
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingDispatch, setEditingDispatch] = React.useState<Dispatch | null>(null);
+  const [editingDispatch, set수정ingDispatch] = React.useState<Dispatch | null>(null);
   const [formData, setFormData] = React.useState({
     routeId: '',
     driverId: '',
@@ -70,7 +70,7 @@ export default function DispatchesPage() {
 
   const handleOpenForm = (dispatch?: Dispatch) => {
     if (dispatch) {
-      setEditingDispatch(dispatch);
+      set수정ingDispatch(dispatch);
       setFormData({
         routeId: dispatch.routeId,
         driverId: dispatch.driverId,
@@ -79,7 +79,7 @@ export default function DispatchesPage() {
         status: dispatch.status,
       });
     } else {
-      setEditingDispatch(null);
+      set수정ingDispatch(null);
       setFormData({
         routeId: '',
         driverId: '',

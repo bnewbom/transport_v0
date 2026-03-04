@@ -27,7 +27,7 @@ export default function ClientsPage() {
   
   // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingClient, setEditingClient] = React.useState<Client | null>(null);
+  const [editingClient, set수정ingClient] = React.useState<Client | null>(null);
   const [formData, setFormData] = React.useState({
     name: '',
     phone: '',
@@ -69,7 +69,7 @@ export default function ClientsPage() {
 
   const handleOpenForm = (client?: Client) => {
     if (client) {
-      setEditingClient(client);
+      set수정ingClient(client);
       setFormData({
         name: client.name,
         phone: client.phone,
@@ -77,7 +77,7 @@ export default function ClientsPage() {
         status: client.status,
       });
     } else {
-      setEditingClient(null);
+      set수정ingClient(null);
       setFormData({
         name: '',
         phone: '',

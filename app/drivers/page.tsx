@@ -26,7 +26,7 @@ export default function DriversPage() {
 
   // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingDriver, setEditingDriver] = React.useState<Driver | null>(null);
+  const [editingDriver, set수정ingDriver] = React.useState<Driver | null>(null);
   const [formData, setFormData] = React.useState({
     name: '',
     phone: '',
@@ -71,7 +71,7 @@ export default function DriversPage() {
 
   const handleOpenForm = (driver?: Driver) => {
     if (driver) {
-      setEditingDriver(driver);
+      set수정ingDriver(driver);
       setFormData({
         name: driver.name,
         phone: driver.phone,
@@ -82,7 +82,7 @@ export default function DriversPage() {
         accountHolder: driver.accountHolder || '',
       });
     } else {
-      setEditingDriver(null);
+      set수정ingDriver(null);
       setFormData({
         name: '',
         phone: '',
