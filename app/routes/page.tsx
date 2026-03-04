@@ -1,389 +1,126 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { t } from '@/lib/i18n';
-import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
-import { repositories } from '@/lib/repository';
-import { formatKRW, getStatusLabel } from '@/lib/formatters';
-import { Route } from '@/lib/schemas';
 import { ModalForm } from '@/components/crud/modal-form';
-import { ConfirmDeleteDialog } from '@/components/crud/confirm-delete-dialog';
 import { FormField } from '@/components/crud/form-field';
-import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
+import { navItems } from '@/lib/navigation';
+import { t } from '@/lib/i18n';
+import { repositories } from '@/lib/repository';
+import { Route } from '@/lib/schemas';
+import { formatKRW } from '@/lib/formatters';
+import { DAY_LABELS, getShiftTypeLabel, getStatusLabel, labelsToWeekdayMask, maskIncludesDay, weekdayMaskToLabels } from '@/lib/labels';
+import { ensureSeedData } from '@/lib/seed';
 
-
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 export default function RoutesPage() {
-  const router = useRouter();
-  const toast = useAppToast();
-  const [routes, setRoutes] = React.useState<Route[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
-  // Form state
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingRoute, set수정ingRoute] = React.useState<Route | null>(null);
-  const [formData, setFormData] = React.useState({
-    name: '',
-    startLocation: '',
-    endLocation: '',
-    distance: 0,
-    estimatedTime: 0,
-    baseRate: 0,
-    status: 'active' as const,
-  });
-  const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
-
-  // 삭제 state
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingRoute, setDeletingRoute] = React.useState<Route | null>(null);
-
-  // Search & Filter
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [rows, setRows] = React.useState<Route[]>([]);
+  const [open, setOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<Route | null>(null);
+  const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'active' | 'inactive'>('all');
+  const [shiftFilter, setShiftFilter] = React.useState<'all' | 'day' | 'night'>('all');
+  const [dayFilter, setDayFilter] = React.useState<'all' | '0' | '1' | '2' | '3' | '4' | '5' | '6'>('all');
+  const [selectedDays, setSelectedDays] = React.useState<number[]>(ALL_DAYS);
+  const [form, setForm] = React.useState({ name: '', startLocation: '', endLocation: '', distance: 0, estimatedTime: 0, baseRate: 0, shiftType: 'day' as Route['shiftType'], baseAllowanceAmount: 0, status: 'active' as Route['status'] });
+
+  const load = React.useCallback(() => setRows(repositories.routes.getAll()), []);
 
   React.useEffect(() => {
-    const auth = localStorage.getItem('auth');
-    if (!auth) {
-      router.push('/login');
-      return;
-    }
-    loadRoutes();
-  }, [router]);
+    ensureSeedData();
+    load();
+  }, [load]);
 
-  const loadRoutes = () => {
-    setRoutes(repositories.routes.getAll());
-    setLoading(false);
+  const save = () => {
+    const payload = { ...form, weekdayMask: labelsToWeekdayMask(selectedDays) };
+    if (editing) repositories.routes.update(editing.id, payload);
+    else repositories.routes.create(payload);
+    setOpen(false);
+    load();
   };
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    if (!formData.name.trim()) errors.name = '노선명은 필수 입력입니다';
-    if (!formData.startLocation.trim()) errors.startLocation = '출발지는 필수 입력입니다';
-    if (!formData.endLocation.trim()) errors.endLocation = '도착지는 필수 입력입니다';
-    if (formData.distance <= 0) errors.distance = '거리는 0보다 커야 합니다';
-    if (formData.estimatedTime <= 0) errors.estimatedTime = '예상 시간은 0보다 커야 합니다';
-    if (formData.baseRate <= 0) errors.baseRate = '기본 요금은 0보다 커야 합니다';
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const toggleDay = (day: number) => {
+    setSelectedDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]);
   };
 
-  const handleOpenForm = (route?: Route) => {
-    if (route) {
-      set수정ingRoute(route);
-      setFormData({
-        name: route.name,
-        startLocation: route.startLocation,
-        endLocation: route.endLocation,
-        distance: route.distance,
-        estimatedTime: route.estimatedTime,
-        baseRate: route.baseRate,
-        status: route.status,
-      });
-    } else {
-      set수정ingRoute(null);
-      setFormData({
-        name: '',
-        startLocation: '',
-        endLocation: '',
-        distance: 0,
-        estimatedTime: 0,
-        baseRate: 0,
-        status: 'active',
-      });
-    }
-    setFormErrors({});
-    setIsDrawerOpen(true);
-  };
-
-  const handleSaveRoute = () => {
-    if (!validateForm()) return;
-
-    try {
-      if (editingRoute) {
-        repositories.routes.update(editingRoute.id, formData);
-        toast.success('노선 수정 완료', '변경사항이 저장되었습니다');
-      } else {
-        repositories.routes.create(formData as Omit<Route, 'id'>);
-        toast.success('노선 등록 완료', '새 노선이 추가되었습니다');
-      }
-      loadRoutes();
-      setIsDrawerOpen(false);
-    } catch (error) {
-      toast.error('노선 저장 실패', t('common.retry'));
-    }
-  };
-
-  const handleDeleteClick = (route: Route) => {
-    setDeletingRoute(route);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deletingRoute) return;
-    try {
-      repositories.routes.delete(deletingRoute.id);
-      toast.success('노선 삭제 완료', '노선이 삭제되었습니다');
-      loadRoutes();
-      setDeleteDialogOpen(false);
-      setDeletingRoute(null);
-    } catch (error) {
-      toast.error('노선 삭제 실패', t('common.retry'));
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('auth');
-    router.push('/login');
-  };
-
-  // Filtered data
-  const filteredRoutes = routes.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.startLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.endLocation.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const filtered = rows.filter((row) => {
+    const bySearch = row.name.toLowerCase().includes(search.toLowerCase());
+    const byStatus = statusFilter === 'all' || row.status === statusFilter;
+    const byShift = shiftFilter === 'all' || row.shiftType === shiftFilter;
+    const byDay = dayFilter === 'all' || maskIncludesDay(row.weekdayMask, Number(dayFilter));
+    return bySearch && byStatus && byShift && byDay;
   });
 
-  const activeCount = routes.filter(r => r.status === 'active').length;
-  const totalDistance = routes.reduce((sum, r) => sum + r.distance, 0);
-  const avgRate = routes.length > 0 ? Math.round(routes.reduce((sum, r) => sum + r.baseRate, 0) / routes.length) : 0;
-
   return (
-    <SidebarLayout
-      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
-      header={
-        <Header
-          title={t('nav.routes')}
-          rightContent={
-            <button
-              onClick={handleLogout}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              로그아웃
-            </button>
-          }
-        />
-      }
-    >
+    <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.routes')} />}>
       <PageContent>
-        {/* Stats */}
-        <Grid columns={4} gap="md" className="mb-8">
-          <StatCard label="전체 노선" value={routes.length} icon="🗺" />
-          <StatCard label="활성 노선" value={activeCount} icon="✅" />
-          <StatCard label="총 거리" value={`${totalDistance} km`} icon="📏" />
-          <StatCard label="평균 기본요금" value={formatKRW(avgRate)} icon="💰" />
+        <Grid columns={4} className="mb-4">
+          <StatCard label="전체 노선" value={rows.length} />
+          <StatCard label="활성" value={rows.filter((x) => x.status === 'active').length} />
+          <StatCard label="주간" value={rows.filter((x) => x.shiftType === 'day').length} />
+          <StatCard label="야간" value={rows.filter((x) => x.shiftType === 'night').length} />
         </Grid>
 
-        {/* Filter & Actions */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="노선 검색"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
-            >
-              <option value="all">전체 상태</option>
-              <option value="active">활성</option>
-              <option value="inactive">비활성</option>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+            <select value={dayFilter} onChange={(e) => setDayFilter(e.target.value as typeof dayFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체 요일</option>
+              {DAY_LABELS.map((day, idx) => <option key={day} value={String(idx)}>{day}</option>)}
+            </select>
+            <select value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value as typeof shiftFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체 주/야간</option><option value="day">주간</option><option value="night">야간</option>
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체 상태</option><option value="active">활성</option><option value="inactive">비활성</option>
             </select>
           </div>
-          <Button
-            onClick={() => handleOpenForm()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            + 노선 추가
-          </Button>
+          <Button onClick={() => { setEditing(null); setSelectedDays(ALL_DAYS); setForm({ name: '', startLocation: '', endLocation: '', distance: 0, estimatedTime: 0, baseRate: 0, shiftType: 'day', baseAllowanceAmount: 0, status: 'active' }); setOpen(true); }}>+ 노선 추가</Button>
         </div>
 
-        {/* Data Table */}
-        <DataList<Route>
-          data={filteredRoutes}
-          isLoading={loading}
+        <DataList
+          data={filtered}
           columns={[
-            {
-              key: 'name',
-              label: '노선명',
-              render: (value) => <span className="font-medium">{value}</span>,
-            },
-            {
-              key: 'startLocation',
-              label: '출발지',
-              render: (value) => <span className="text-sm">{value}</span>,
-            },
-            {
-              key: 'endLocation',
-              label: '도착지',
-              render: (value) => <span className="text-sm">{value}</span>,
-            },
-            {
-              key: 'distance',
-              label: '거리',
-              render: (value) => <span className="font-medium">{value} km</span>,
-            },
-            {
-              key: 'baseRate',
-              label: '기본 요금',
-              render: (value) => <span className="font-medium">{formatKRW(value as number)}</span>,
-            },
-            {
-              key: 'status',
-              label: '상태',
-              render: (value) => (
-                <Badge variant={value === 'active' ? 'default' : 'secondary'}>
-                  {getStatusLabel(value)}
-                </Badge>
-              ),
-            },
+            { key: 'name', label: '노선명' },
+            { key: 'weekdayMask', label: '요일', render: (v) => weekdayMaskToLabels(Number(v)) },
+            { key: 'shiftType', label: '주/야간', render: (v) => <Badge>{getShiftTypeLabel(v)}</Badge> },
+            { key: 'baseAllowanceAmount', label: '기본 수당(1회)', render: (v) => formatKRW(Number(v)) },
+            { key: 'status', label: '상태', render: (v) => <Badge>{getStatusLabel(String(v))}</Badge> },
           ]}
-          actions={(route) => (
+          actions={(row) => (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleOpenForm(route)}
-              >
-                수정
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDeleteClick(route)}
-              >
-                삭제
-              </Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                setEditing(row);
+                setSelectedDays(ALL_DAYS.filter((day) => maskIncludesDay(row.weekdayMask, day)));
+                setForm({ name: row.name, startLocation: row.startLocation, endLocation: row.endLocation, distance: row.distance, estimatedTime: row.estimatedTime, baseRate: row.baseRate, shiftType: row.shiftType, baseAllowanceAmount: row.baseAllowanceAmount, status: row.status });
+                setOpen(true);
+              }}>수정</Button>
+              <Button size="sm" variant="outline" onClick={() => { repositories.routes.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
             </div>
           )}
         />
+
+        <ModalForm isOpen={open} onOpenChange={setOpen} onSubmit={save} title={editing ? '노선 수정' : '노선 추가'} submitLabel={editing ? '수정' : '추가'}>
+          <FormField label="노선명" required><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="출발지" required><input value={form.startLocation} onChange={(e) => setForm({ ...form, startLocation: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="도착지" required><input value={form.endLocation} onChange={(e) => setForm({ ...form, endLocation: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="요일" required>
+            <div className="flex flex-wrap gap-2">
+              {DAY_LABELS.map((day, idx) => {
+                const selected = selectedDays.includes(idx);
+                return <button type="button" key={day} onClick={() => toggleDay(idx)} className={`rounded-lg border px-3 py-1 text-sm ${selected ? 'border-primary bg-primary/10 text-primary' : 'border-input'}`}>{day}</button>;
+              })}
+            </div>
+          </FormField>
+          <FormField label="주/야간"><select value={form.shiftType} onChange={(e) => setForm({ ...form, shiftType: e.target.value as Route['shiftType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="day">주간</option><option value="night">야간</option></select></FormField>
+          <FormField label="기본 수당(1회)"><input type="number" value={form.baseAllowanceAmount} onChange={(e) => setForm({ ...form, baseAllowanceAmount: Number(e.target.value) })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Route['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">활성</option><option value="inactive">비활성</option></select></FormField>
+        </ModalForm>
       </PageContent>
-
-      {/* Create/수정 Form Modal */}
-      <ModalForm
-        isOpen={isDrawerOpen}
-        title={editingRoute ? '노선 수정' : '노선 추가'}
-        onOpenChange={setIsDrawerOpen}
-        onSubmit={handleSaveRoute}
-        submitLabel={editingRoute ? '수정' : '추가'}
-      >
-        <FormField
-          label="노선명"
-          error={formErrors.name}
-          required
-        >
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="예: 서울-인천 고속"
-          />
-        </FormField>
-
-        <FormField
-          label="출발지"
-          error={formErrors.startLocation}
-          required
-        >
-          <input
-            type="text"
-            value={formData.startLocation}
-            onChange={(e) => setFormData({...formData, startLocation: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="출발지를 입력하세요"
-          />
-        </FormField>
-
-        <FormField
-          label="도착지"
-          error={formErrors.endLocation}
-          required
-        >
-          <input
-            type="text"
-            value={formData.endLocation}
-            onChange={(e) => setFormData({...formData, endLocation: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="도착지를 입력하세요"
-          />
-        </FormField>
-
-        <FormField
-          label="거리(km)"
-          error={formErrors.distance}
-          required
-        >
-          <input
-            type="number"
-            min="1"
-            value={formData.distance}
-            onChange={(e) => setFormData({...formData, distance: parseInt(e.target.value) || 0})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="거리를 입력하세요"
-          />
-        </FormField>
-
-        <FormField
-          label="예상 소요시간(분)"
-          error={formErrors.estimatedTime}
-          required
-        >
-          <input
-            type="number"
-            min="1"
-            value={formData.estimatedTime}
-            onChange={(e) => setFormData({...formData, estimatedTime: parseInt(e.target.value) || 0})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="예상 시간을 입력하세요"
-          />
-        </FormField>
-
-        <FormField
-          label="기본요금(원)"
-          error={formErrors.baseRate}
-          required
-        >
-          <input
-            type="number"
-            min="1"
-            value={formData.baseRate}
-            onChange={(e) => setFormData({...formData, baseRate: parseInt(e.target.value) || 0})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="기본요금을 입력하세요"
-          />
-        </FormField>
-
-        <FormField label="상태" required>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({...formData, status: e.target.value as 'active' | 'inactive'})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
-        </FormField>
-      </ModalForm>
-
-      {/* 삭제 Confirmation Dialog */}
-      <ConfirmDeleteDialog
-        isOpen={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        entityName="노선"
-        displayValue={deletingRoute?.name || ''}
-        onConfirm={handleConfirmDelete}
-      />
     </SidebarLayout>
   );
 }
