@@ -9,37 +9,63 @@ import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { repositories } from '@/lib/repository';
 import { formatKRW, formatDate, getStatusLabel } from '@/lib/formatters';
-import { PayrollSlip } from '@/lib/schemas';
+import { Client, Dispatch, Driver, PayrollSlip, Route } from '@/lib/schemas';
 import { ModalForm } from '@/components/crud/modal-form';
 import { ConfirmDeleteDialog } from '@/components/crud/confirm-delete-dialog';
 import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
+import { getPeriodRange, isDateInRange } from '@/lib/domain/payroll';
 
+type PayrollSlipWithLegacyDeduction = PayrollSlip & {
+  deductionAmount?: number;
+};
 
+type PayrollFormState = {
+  driverId: string;
+  period: string;
+  baseAmount: number;
+  bonusAmount: number;
+  deductions: number;
+  status: 'draft' | 'approved' | 'paid';
+};
+
+const FALLBACK_DRIVER_NAME = '알 수 없음';
+const FALLBACK_PHONE = '연락처 없음';
+
+const getSlipDeduction = (slip: PayrollSlipWithLegacyDeduction) => {
+  return slip.deductionAmount ?? slip.deductions ?? 0;
+};
 
 export default function PayrollPage() {
   const router = useRouter();
   const toast = useAppToast();
-  const [slips, setSlips] = React.useState<PayrollSlip[]>([]);
+  const [slips, setSlips] = React.useState<PayrollSlipWithLegacyDeduction[]>([]);
+  const [drivers, setDrivers] = React.useState<Driver[]>([]);
+  const [dispatches, setDispatches] = React.useState<Dispatch[]>([]);
+  const [routes, setRoutes] = React.useState<Route[]>([]);
+  const [clients, setClients] = React.useState<Client[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   // Form state
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingSlip, setEditingSlip] = React.useState<PayrollSlip | null>(null);
-  const [formData, setFormData] = React.useState({
+  const [editingSlip, setEditingSlip] = React.useState<PayrollSlipWithLegacyDeduction | null>(null);
+  const [formData, setFormData] = React.useState<PayrollFormState>({
     driverId: '',
     period: '',
     baseAmount: 0,
     bonusAmount: 0,
-    deductionAmount: 0,
+    deductions: 0,
     status: 'draft' as const,
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
 
+  const [detailOpen, setDetailOpen] = React.useState(false);
+  const [selectedSlip, setSelectedSlip] = React.useState<PayrollSlipWithLegacyDeduction | null>(null);
+
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingSlip, setDeletingSlip] = React.useState<PayrollSlip | null>(null);
+  const [deletingSlip, setDeletingSlip] = React.useState<PayrollSlipWithLegacyDeduction | null>(null);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -52,13 +78,41 @@ export default function PayrollPage() {
       router.push('/login');
       return;
     }
-    loadSlips();
+    loadPayrollPageData();
   }, [router]);
 
-  const loadSlips = () => {
-    setSlips(repositories.payrollSlips.getAll());
+  React.useEffect(() => {
+    if (!detailOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDetailOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [detailOpen]);
+
+  const loadPayrollPageData = () => {
+    setSlips(repositories.payrollSlips.getAll() as PayrollSlipWithLegacyDeduction[]);
+    setDrivers(repositories.drivers.getAll());
+    setDispatches(repositories.dispatches.getAll());
+    setRoutes(repositories.routes.getAll());
+    setClients(repositories.clients.getAll());
     setLoading(false);
   };
+
+  const driverMap = React.useMemo(() => {
+    return new Map(drivers.map((driver) => [driver.id, driver]));
+  }, [drivers]);
+
+  const routeMap = React.useMemo(() => {
+    return new Map(routes.map((route) => [route.id, route]));
+  }, [routes]);
+
+  const clientMap = React.useMemo(() => {
+    return new Map(clients.map((client) => [client.id, client]));
+  }, [clients]);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -69,7 +123,7 @@ export default function PayrollPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleOpenForm = (slip?: PayrollSlip) => {
+  const handleOpenForm = (slip?: PayrollSlipWithLegacyDeduction) => {
     if (slip) {
       setEditingSlip(slip);
       setFormData({
@@ -77,7 +131,7 @@ export default function PayrollPage() {
         period: slip.period,
         baseAmount: slip.baseAmount,
         bonusAmount: slip.bonusAmount || 0,
-        deductionAmount: slip.deductionAmount || 0,
+        deductions: getSlipDeduction(slip),
         status: slip.status,
       });
     } else {
@@ -87,7 +141,7 @@ export default function PayrollPage() {
         period: new Date().toISOString().slice(0, 7),
         baseAmount: 0,
         bonusAmount: 0,
-        deductionAmount: 0,
+        deductions: 0,
         status: 'draft',
       });
     }
@@ -99,8 +153,8 @@ export default function PayrollPage() {
     if (!validateForm()) return;
 
     try {
-      const totalAmount = formData.baseAmount + formData.bonusAmount - formData.deductionAmount;
-      
+      const totalAmount = formData.baseAmount + formData.bonusAmount - formData.deductions;
+
       if (editingSlip) {
         repositories.payrollSlips.update(editingSlip.id, {
           ...formData,
@@ -111,19 +165,25 @@ export default function PayrollPage() {
         repositories.payrollSlips.create({
           ...formData,
           totalAmount,
+          createdAt: new Date(),
         } as Omit<PayrollSlip, 'id'>);
         toast.success('급여 정산 생성 완료', '새 급여 정산이 생성되었습니다');
       }
-      loadSlips();
+      loadPayrollPageData();
       setIsModalOpen(false);
-    } catch (error) {
+    } catch {
       toast.error('급여 정산 저장 실패', t('common.retry'));
     }
   };
 
-  const handleDeleteClick = (slip: PayrollSlip) => {
+  const handleDeleteClick = (slip: PayrollSlipWithLegacyDeduction) => {
     setDeletingSlip(slip);
     setDeleteDialogOpen(true);
+  };
+
+  const handleOpenDetail = (slip: PayrollSlipWithLegacyDeduction) => {
+    setSelectedSlip(slip);
+    setDetailOpen(true);
   };
 
   const handleConfirmDelete = () => {
@@ -131,10 +191,10 @@ export default function PayrollPage() {
     try {
       repositories.payrollSlips.delete(deletingSlip.id);
       toast.success('급여 정산 삭제 완료', '급여 정산이 삭제되었습니다');
-      loadSlips();
+      loadPayrollPageData();
       setDeleteDialogOpen(false);
       setDeletingSlip(null);
-    } catch (error) {
+    } catch {
       toast.error('급여 정산 삭제 실패', t('common.retry'));
     }
   };
@@ -145,33 +205,52 @@ export default function PayrollPage() {
   };
 
   // Filtered data
-  const filteredSlips = slips.filter(s => {
-    const matchesSearch = s.driverId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.period.includes(searchTerm);
+  const filteredSlips = slips.filter((s) => {
+    const driver = driverMap.get(s.driverId);
+    const driverName = driver?.name || '';
+    const driverPhone = driver?.phone || '';
+    const search = searchTerm.toLowerCase();
+    const matchesSearch =
+      s.driverId.toLowerCase().includes(search) ||
+      s.period.includes(searchTerm) ||
+      driverName.toLowerCase().includes(search) ||
+      driverPhone.includes(searchTerm);
+
     const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
     const matchesPeriod = periodFilter === 'all' || s.period === periodFilter;
     return matchesSearch && matchesStatus && matchesPeriod;
   });
 
   // Get unique periods for filter
-  const periods = Array.from(new Set(slips.map(s => s.period))).sort().reverse();
+  const periods = Array.from(new Set(slips.map((s) => s.period))).sort().reverse();
 
   const stats = {
     total: slips.length,
-    draft: slips.filter(s => s.status === 'draft').length,
-    approved: slips.filter(s => s.status === 'approved').length,
-    paid: slips.filter(s => s.status === 'paid').length,
-    totalPayable: slips.filter(s => s.status !== 'paid').reduce((sum, s) => sum + s.totalAmount, 0),
+    draft: slips.filter((s) => s.status === 'draft').length,
+    approved: slips.filter((s) => s.status === 'approved').length,
+    paid: slips.filter((s) => s.status === 'paid').length,
+    totalPayable: slips.filter((s) => s.status !== 'paid').reduce((sum, s) => sum + s.totalAmount, 0),
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, any> = {
-      'draft': 'secondary',
-      'approved': 'warning',
-      'paid': 'default',
+    const variants: Record<string, 'secondary' | 'warning' | 'default'> = {
+      draft: 'secondary',
+      approved: 'warning',
+      paid: 'default',
     };
     return variants[status] || 'default';
   };
+
+  const detailDriver = selectedSlip ? driverMap.get(selectedSlip.driverId) : undefined;
+  const detailPeriodRange = selectedSlip ? getPeriodRange(selectedSlip.period) : null;
+  const detailDispatches = React.useMemo(() => {
+    if (!selectedSlip || !detailPeriodRange) return [];
+    return dispatches.filter(
+      (dispatch) =>
+        dispatch.driverId === selectedSlip.driverId &&
+        isDateInRange(dispatch.scheduledDate, detailPeriodRange),
+    );
+  }, [dispatches, detailPeriodRange, selectedSlip]);
 
   return (
     <SidebarLayout
@@ -204,14 +283,14 @@ export default function PayrollPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="급여 정산 검색"
+              placeholder="기사명, 연락처, 기간으로 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
             />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'draft' | 'approved' | 'paid')}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
               <option value="all">전체 상태</option>
@@ -225,32 +304,45 @@ export default function PayrollPage() {
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
               <option value="all">전체 기간</option>
-              {periods.map(period => (
-                <option key={period} value={period}>{period}</option>
+              {periods.map((period) => (
+                <option key={period} value={period}>
+                  {period}
+                </option>
               ))}
             </select>
           </div>
-          <Button
-            onClick={() => handleOpenForm()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
+          <Button onClick={() => handleOpenForm()} className="bg-primary text-primary-foreground hover:bg-primary/90">
             + 급여 정산 생성
           </Button>
         </div>
 
         {/* Data Table */}
-        <DataList<PayrollSlip>
+        <DataList<PayrollSlipWithLegacyDeduction>
           data={filteredSlips}
           isLoading={loading}
           columns={[
             {
               key: 'driverId',
-              label: '기사',
-              render: (value) => <span className="font-medium">{value}</span>,
+              label: '기사 정보',
+              render: (_, item) => {
+                const driver = driverMap.get(item.driverId);
+                const driverName = driver?.name ?? FALLBACK_DRIVER_NAME;
+                const phone = driver?.phone ?? FALLBACK_PHONE;
+
+                return (
+                  <button
+                    type="button"
+                    className="text-left font-medium text-primary hover:underline"
+                    onClick={() => handleOpenDetail(item)}
+                  >
+                    {driverName} ({phone})
+                  </button>
+                );
+              },
             },
             {
               key: 'period',
-              label: 'Period',
+              label: '정산 기간',
               render: (value) => <span className="font-mono text-sm">{value}</span>,
             },
             {
@@ -261,51 +353,42 @@ export default function PayrollPage() {
             {
               key: 'bonusAmount',
               label: '보너스',
-              render: (value, item) => (
+              render: (value) => (
                 <span className="text-sm text-green-600 dark:text-green-400">
                   {value && (value as number) > 0 ? '+' + formatKRW(value as number) : '—'}
                 </span>
               ),
             },
             {
-              key: 'deductionAmount',
+              key: 'deductions',
               label: '공제',
-              render: (value) => (
-                <span className="text-sm text-red-600 dark:text-red-400">
-                  {value && (value as number) > 0 ? '-' + formatKRW(value as number) : '—'}
-                </span>
-              ),
+              render: (_, item) => {
+                const deduction = getSlipDeduction(item);
+                return (
+                  <span className="text-sm text-red-600 dark:text-red-400">
+                    {deduction > 0 ? '-' + formatKRW(deduction) : '—'}
+                  </span>
+                );
+              },
             },
             {
               key: 'totalAmount',
-              label: '합계',
+              label: '실수령액',
               render: (value) => <span className="font-medium">{formatKRW(value as number)}</span>,
             },
             {
               key: 'status',
               label: '상태',
-              render: (value) => (
-                <Badge variant={getStatusBadgeVariant(value)}>
-                  {getStatusLabel(value)}
-                </Badge>
-              ),
+              render: (value) => <Badge variant={getStatusBadgeVariant(value)}>{getStatusLabel(value)}</Badge>,
             },
           ]}
           actions={(slip) => (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleOpenForm(slip)}
-              >
-                Edit
+              <Button size="sm" variant="outline" onClick={() => handleOpenForm(slip)}>
+                수정
               </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDeleteClick(slip)}
-              >
-                Delete
+              <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(slip)}>
+                삭제
               </Button>
             </div>
           )}
@@ -320,72 +403,58 @@ export default function PayrollPage() {
         onSubmit={handleSaveSlip}
         submitLabel={editingSlip ? '수정' : '생성'}
       >
-        <FormField
-          label="기사"
-          error={formErrors.driverId}
-          required
-        >
-          <input
-            type="text"
+        <FormField label="기사" error={formErrors.driverId} required>
+          <select
             value={formData.driverId}
-            onChange={(e) => setFormData({...formData, driverId: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="기사 ID 또는 이름"
-          />
+          >
+            <option value="">기사 선택</option>
+            {drivers.map((driver) => (
+              <option key={driver.id} value={driver.id}>
+                {driver.name} ({driver.phone})
+              </option>
+            ))}
+          </select>
         </FormField>
 
-        <FormField
-          label="정산 기간"
-          error={formErrors.period}
-          required
-          help="Format: YYYY-MM"
-        >
+        <FormField label="정산 기간" error={formErrors.period} required help="형식: YYYY-MM">
           <input
             type="month"
             value={formData.period}
-            onChange={(e) => setFormData({...formData, period: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, period: e.target.value })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </FormField>
 
-        <FormField
-          label="기본 금액(원)"
-          error={formErrors.baseAmount}
-          required
-        >
+        <FormField label="기본 금액(원)" error={formErrors.baseAmount} required>
           <input
             type="number"
             min="1"
             value={formData.baseAmount}
-            onChange={(e) => setFormData({...formData, baseAmount: parseInt(e.target.value) || 0})}
+            onChange={(e) => setFormData({ ...formData, baseAmount: parseInt(e.target.value, 10) || 0 })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="기본 금액을 입력하세요"
           />
         </FormField>
 
-        <FormField
-          label="보너스(원)"
-          help="선택 사항"
-        >
+        <FormField label="보너스(원)" help="선택 사항">
           <input
             type="number"
             min="0"
             value={formData.bonusAmount}
-            onChange={(e) => setFormData({...formData, bonusAmount: parseInt(e.target.value) || 0})}
+            onChange={(e) => setFormData({ ...formData, bonusAmount: parseInt(e.target.value, 10) || 0 })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="보너스를 입력하세요"
           />
         </FormField>
 
-        <FormField
-          label="공제 금액(원)"
-          help="선택 사항"
-        >
+        <FormField label="공제 금액(원)" help="선택 사항">
           <input
             type="number"
             min="0"
-            value={formData.deductionAmount}
-            onChange={(e) => setFormData({...formData, deductionAmount: parseInt(e.target.value) || 0})}
+            value={formData.deductions}
+            onChange={(e) => setFormData({ ...formData, deductions: parseInt(e.target.value, 10) || 0 })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="공제 금액을 입력하세요"
           />
@@ -393,16 +462,15 @@ export default function PayrollPage() {
 
         <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="text-muted-foreground">
-            합계: <span className="font-semibold text-foreground">
-              {formatKRW(formData.baseAmount + formData.bonusAmount - formData.deductionAmount)}
-            </span>
+            실수령액:{' '}
+            <span className="font-semibold text-foreground">{formatKRW(formData.baseAmount + formData.bonusAmount - formData.deductions)}</span>
           </p>
         </div>
 
         <FormField label="상태" required>
           <select
             value={formData.status}
-            onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'approved' | 'paid' })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="draft">임시</option>
@@ -411,6 +479,123 @@ export default function PayrollPage() {
           </select>
         </FormField>
       </ModalForm>
+
+      {detailOpen && selectedSlip && detailPeriodRange && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDetailOpen(false)} />
+          <div className="relative z-10 mx-4 max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-background shadow-lg">
+            <div className="sticky top-0 border-b border-border bg-background px-6 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">급여 상세</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {detailDriver?.name ?? FALLBACK_DRIVER_NAME} · {detailDriver?.phone ?? FALLBACK_PHONE}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(detailPeriodRange.start, 'long')} ~ {formatDate(detailPeriodRange.end, 'long')}
+                  </p>
+                </div>
+                <Badge variant={getStatusBadgeVariant(selectedSlip.status)}>{getStatusLabel(selectedSlip.status)}</Badge>
+              </div>
+            </div>
+
+            <div className="space-y-6 px-6 py-6">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-sm text-muted-foreground">총지급액</p>
+                  <p className="mt-2 text-xl font-semibold">{formatKRW(selectedSlip.baseAmount + selectedSlip.bonusAmount)}</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-sm text-muted-foreground">총공제액</p>
+                  <p className="mt-2 text-xl font-semibold">{formatKRW(getSlipDeduction(selectedSlip))}</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-sm text-muted-foreground">실수령액</p>
+                  <p className="mt-2 text-xl font-semibold text-primary">{formatKRW(selectedSlip.totalAmount)}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <h3 className="mb-3 text-base font-semibold">지급 항목</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">기본급</span>
+                      <span>{formatKRW(selectedSlip.baseAmount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">추가수당/보너스</span>
+                      <span>{formatKRW(selectedSlip.bonusAmount)}</span>
+                    </div>
+                  </div>
+
+                  <h3 className="mb-3 mt-6 text-base font-semibold">공제 항목</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">총 공제</span>
+                      <span>{formatKRW(getSlipDeduction(selectedSlip))}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">국민연금</span>
+                      <span>{formatKRW(0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">건강보험</span>
+                      <span>{formatKRW(0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">고용보험/소득세</span>
+                      <span>{formatKRW(0)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <h3 className="mb-3 text-base font-semibold">운행일지</h3>
+                  {detailDispatches.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">해당 기간에 운행 기록이 없습니다.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-left text-muted-foreground">
+                            <th className="py-2 pr-3">운행일자</th>
+                            <th className="py-2 pr-3">노선</th>
+                            <th className="py-2 pr-3">거래처</th>
+                            <th className="py-2 pr-3">추가운행</th>
+                            <th className="py-2">비고</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detailDispatches.map((dispatch) => {
+                            const route = routeMap.get(dispatch.routeId);
+                            const client = clientMap.get(dispatch.clientId);
+                            return (
+                              <tr key={dispatch.id} className="border-b border-border/60 align-top">
+                                <td className="py-2 pr-3">{formatDate(dispatch.scheduledDate, 'long')}</td>
+                                <td className="py-2 pr-3">{route?.name ?? '알 수 없는 노선'}</td>
+                                <td className="py-2 pr-3">{client?.name ?? '알 수 없는 거래처'}</td>
+                                <td className="py-2 pr-3">{dispatch.status === 'completed' ? '완료 운행' : '기본 운행'}</td>
+                                <td className="py-2">{dispatch.notes || '—'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 flex justify-end border-t border-border bg-background px-6 py-4">
+              <Button variant="outline" onClick={() => setDetailOpen(false)}>
+                닫기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDeleteDialog
