@@ -278,7 +278,7 @@ export default function DriversPage() {
         title={editingDriver ? '기사 수정' : '기사 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveDriver}
-        submitLabel={editingDriver ? 'Update' : 'Create'}
+        submitLabel={editingDriver ? '수정' : '추가'}
       >
         <FormField
           label="기사명"
@@ -318,7 +318,7 @@ export default function DriversPage() {
             value={formData.licenseNumber}
             onChange={(e) => setFormData({...formData, licenseNumber: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="DL-2020-123456"
+            placeholder="예: 면허번호를 입력하세요"
           />
         </FormField>
 
@@ -336,7 +336,7 @@ export default function DriversPage() {
 
         <FormField
           label="계좌번호"
-          help="Optional: For payroll processing"
+          help="선택 사항: 급여 정산에 사용됩니다"
         >
           <input
             type="text"
@@ -349,7 +349,7 @@ export default function DriversPage() {
 
         <FormField
           label="예금주"
-          help="Optional: Name on bank account"
+          help="선택 사항: 예금주명을 입력하세요"
         >
           <input
             type="text"

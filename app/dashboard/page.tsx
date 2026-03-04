@@ -7,11 +7,26 @@ import { t } from '@/lib/i18n';
 import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
-import { DataList, Badge } from '@/components/data-list';
+import { Badge } from '@/components/data-list';
 import { dataService, initializeMockData } from '@/lib/data-service';
 import { formatKRW, formatDateTime, getStatusColor, getStatusLabel } from '@/lib/formatters';
 
 
+
+
+const activityTypeLabel: Record<string, string> = {
+  payment: '급여',
+  financial: '재무',
+  operation: '운영',
+  dispatch: '배차',
+};
+
+const activityEntityLabel: Record<string, string> = {
+  PayrollSlip: '급여 명세',
+  FinancialRecord: '수입/지출 내역',
+  OperationLog: '운영 로그',
+  Dispatch: '배차',
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -84,8 +99,8 @@ export default function DashboardPage() {
             trend={{ value: -3.2, isPositive: false }}
           />
           <StatCard
-            label={t('pages.dashboard.active배차')}
-            value={stats.active배차}
+            label={t('pages.dashboard.activeDispatches')}
+            value={stats.activeDispatches}
             icon="📦"
           />
           <StatCard
@@ -148,11 +163,11 @@ export default function DashboardPage() {
               <div key={activity.id} className="flex items-start justify-between border-b border-border pb-3 last:border-0">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground">{activity.entityType}</p>
+                  <p className="text-xs text-muted-foreground">{activityEntityLabel[activity.entityType] ?? activity.entityType}</p>
                 </div>
                 <div className="text-right">
                   <Badge variant="secondary">
-                    {activity.type}
+                    {activityTypeLabel[activity.type] ?? activity.type}
                   </Badge>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {formatDateTime(activity.timestamp)}

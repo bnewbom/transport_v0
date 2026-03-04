@@ -245,7 +245,7 @@ export default function PayrollPage() {
           columns={[
             {
               key: 'driverId',
-              label: 'Driver',
+              label: '기사',
               render: (value) => <span className="font-medium">{value}</span>,
             },
             {
@@ -365,7 +365,7 @@ export default function PayrollPage() {
 
         <FormField
           label="보너스(원)"
-          help="Optional"
+          help="선택 사항"
         >
           <input
             type="number"
@@ -379,7 +379,7 @@ export default function PayrollPage() {
 
         <FormField
           label="공제 금액(원)"
-          help="Optional"
+          help="선택 사항"
         >
           <input
             type="number"
@@ -393,7 +393,7 @@ export default function PayrollPage() {
 
         <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">
+            합계: <span className="font-semibold text-foreground">
               {formatKRW(formData.baseAmount + formData.bonusAmount - formData.deductionAmount)}
             </span>
           </p>

@@ -82,7 +82,7 @@ export default function SettingsPage() {
                 <input type="checkbox" defaultChecked className="h-4 w-4" />
               </div>
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Payroll 알림</label>
+                <label className="text-sm font-medium text-foreground">급여 알림</label>
                 <input type="checkbox" defaultChecked className="h-4 w-4" />
               </div>
             </div>
@@ -102,12 +102,12 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Danger Zone */}
+          {/* 위험 구역 */}
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-destructive">Danger Zone</h2>
+            <h2 className="mb-4 text-lg font-semibold text-destructive">위험 구역</h2>
             <p className="mb-4 text-sm text-muted-foreground">되돌릴 수 없는 작업입니다</p>
             <button className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/20">
-              Clear All Data
+              전체 데이터 삭제
             </button>
           </div>
         </div>

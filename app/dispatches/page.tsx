@@ -186,13 +186,13 @@ export default function DispatchesPage() {
     >
       <PageContent>
         {/* Stats */}
-        <Grid columns={5} gap="md" className="mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <StatCard label="전체" value={stats.total} icon="📦" />
           <StatCard label="완료" value={stats.completed} icon="✅" />
           <StatCard label="진행 중" value={stats.inProgress} icon="🔄" />
           <StatCard label="대기" value={stats.pending} icon="⏱" />
           <StatCard label="취소" value={stats.cancelled} icon="❌" />
-        </Grid>
+        </div>
 
         {/* Filter & Actions */}
         <div className="mb-6 flex items-center justify-between">
@@ -232,17 +232,17 @@ export default function DispatchesPage() {
           columns={[
             {
               key: 'id',
-              label: 'ID',
+              label: '번호',
               render: (value) => <span className="font-mono text-sm">{value}</span>,
             },
             {
               key: 'routeId',
-              label: 'Route',
+              label: '노선',
               render: (value) => <span className="text-sm font-medium">{value}</span>,
             },
             {
               key: 'driverId',
-              label: 'Driver',
+              label: '기사',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
@@ -289,10 +289,10 @@ export default function DispatchesPage() {
       {/* Create/수정 Form Modal */}
       <ModalForm
         isOpen={isModalOpen}
-        title={editingDispatch ? '수정 Dispatch' : 'Create New Dispatch'}
+        title={editingDispatch ? '배차 수정' : '배차 추가'}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSaveDispatch}
-        submitLabel={editingDispatch ? 'Update' : 'Schedule'}
+        submitLabel={editingDispatch ? '수정' : '배차 등록'}
       >
         <FormField
           label="노선"

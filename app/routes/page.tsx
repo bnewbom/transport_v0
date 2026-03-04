@@ -275,7 +275,7 @@ export default function RoutesPage() {
         title={editingRoute ? '노선 수정' : '노선 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveRoute}
-        submitLabel={editingRoute ? 'Update' : 'Create'}
+        submitLabel={editingRoute ? '수정' : '추가'}
       >
         <FormField
           label="노선명"
