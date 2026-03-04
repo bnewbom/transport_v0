@@ -2,375 +2,162 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { t } from '@/lib/i18n';
-import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent, StatCard } from '@/components/layout-shell';
+import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
-import { repositories } from '@/lib/repository';
-import { formatDate, getStatusLabel } from '@/lib/formatters';
-import { Dispatch } from '@/lib/schemas';
-import { ModalForm } from '@/components/crud/modal-form';
-import { ConfirmDeleteDialog } from '@/components/crud/confirm-delete-dialog';
-import { FormField } from '@/components/crud/form-field';
-import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
-
-
+import { navItems } from '@/lib/navigation';
+import { t } from '@/lib/i18n';
+import { repositories, recordChangeLog } from '@/lib/repository';
+import { Dispatch, Run } from '@/lib/schemas';
+import { formatDate, formatKRW } from '@/lib/formatters';
+import { useAppToast } from '@/components/crud/toast';
+import { dayToBit, getDispatchStatusLabel, getRunStatusLabel } from '@/lib/labels';
+import { ensureSeedData } from '@/lib/seed';
 
 export default function DispatchesPage() {
   const router = useRouter();
   const toast = useAppToast();
-  const [dispatches, setDispatches] = React.useState<Dispatch[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [serviceDate, setServiceDate] = React.useState(new Date().toISOString().slice(0, 10));
+  const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'draft' | 'published' | 'closed' | 'canceled'>('all');
+  const [rows, setRows] = React.useState<Dispatch[]>([]);
+  const [runs, setRuns] = React.useState<Run[]>([]);
 
-  // Form state
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingDispatch, set수정ingDispatch] = React.useState<Dispatch | null>(null);
-  const [formData, setFormData] = React.useState({
-    routeId: '',
-    driverId: '',
-    scheduledDate: new Date().toISOString().split('T')[0],
-    scheduledTime: '09:00',
-    status: 'pending' as const,
-  });
-  const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
-
-  // 삭제 state
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingDispatch, setDeletingDispatch] = React.useState<Dispatch | null>(null);
-
-  // Search & Filter
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'>('all');
+  const load = React.useCallback(() => {
+    setRows(repositories.dispatches.getAll());
+    setRuns(repositories.runs.getAll());
+  }, []);
 
   React.useEffect(() => {
-    const auth = localStorage.getItem('auth');
-    if (!auth) {
-      router.push('/login');
-      return;
-    }
-    loadDispatches();
-  }, [router]);
+    if (!localStorage.getItem('auth')) router.push('/login');
+    ensureSeedData();
+    load();
+  }, [router, load]);
 
-  const loadDispatches = () => {
-    setDispatches(repositories.dispatches.getAll());
-    setLoading(false);
-  };
+  const isMonthLocked = (date: string) => repositories.payroll.getAll().some((p) => p.settlementMonth === date.slice(0, 7) && p.status === 'confirmed');
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    if (!formData.routeId.trim()) errors.routeId = t('common.required');
-    if (!formData.driverId.trim()) errors.driverId = t('common.required');
-    if (!formData.scheduledDate) errors.scheduledDate = t('common.required');
-    if (!formData.scheduledTime) errors.scheduledTime = t('common.required');
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const autoGenerate = () => {
+    const bit = dayToBit(new Date(serviceDate).getDay());
+    let targets = repositories.routes.getAll().filter((r) => r.status === 'active' && (r.weekdayMask & bit) !== 0);
+    if (targets.length === 0) targets = repositories.routes.getAll().filter((r) => r.status === 'active').slice(0, 1);
 
-  const handleOpenForm = (dispatch?: Dispatch) => {
-    if (dispatch) {
-      set수정ingDispatch(dispatch);
-      setFormData({
-        routeId: dispatch.routeId,
-        driverId: dispatch.driverId,
-        scheduledDate: dispatch.scheduledDate instanceof Date ? dispatch.scheduledDate.toISOString().split('T')[0] : dispatch.scheduledDate,
-        scheduledTime: dispatch.scheduledTime,
-        status: dispatch.status,
+    for (const route of targets) {
+      const driver = repositories.drivers.getAll().find((d) => d.status === 'active' && d.defaultRouteId === route.id);
+      const dispatch = repositories.dispatches.create({
+        routeId: route.id,
+        plannedDriverId: driver?.id ?? null,
+        driverId: driver?.id,
+        clientId: repositories.clients.getAll()[0]?.id,
+        serviceDate,
+        scheduledDate: serviceDate,
+        scheduledTime: route.shiftType === 'night' ? '20:00' : '08:00',
+        shiftSlot: route.shiftType === 'night' ? 'pm' : 'am',
+        status: 'draft',
+        createdAt: new Date().toISOString(),
       });
-    } else {
-      set수정ingDispatch(null);
-      setFormData({
-        routeId: '',
-        driverId: '',
-        scheduledDate: new Date().toISOString().split('T')[0],
-        scheduledTime: '09:00',
-        status: 'pending',
-      });
+      recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'create', after: dispatch });
     }
-    setFormErrors({});
-    setIsModalOpen(true);
+    load();
+    toast.success('자동 배차 생성', `${targets.length}건 생성되었습니다.`);
   };
 
-  const handleSaveDispatch = () => {
-    if (!validateForm()) return;
-
-    try {
-      if (editingDispatch) {
-        repositories.dispatches.update(editingDispatch.id, {
-          ...formData,
-          scheduledDate: new Date(formData.scheduledDate),
-        });
-        toast.success('배차 수정 완료', '변경사항이 저장되었습니다');
-      } else {
-        repositories.dispatches.create({
-          ...formData,
-          scheduledDate: new Date(formData.scheduledDate),
-        } as Omit<Dispatch, 'id' | 'changeLogs'>);
-        toast.success('배차 등록 완료', '새 배차가 등록되었습니다');
-      }
-      loadDispatches();
-      setIsModalOpen(false);
-    } catch {
-      toast.error('배차 저장 실패', t('common.retry'));
+  const updateDispatch = (dispatch: Dispatch, updates: Partial<Dispatch>) => {
+    if (dispatch.status === 'closed') return toast.error('수정 불가', '마감 상태의 배차는 수정할 수 없습니다.');
+    const before = { ...dispatch };
+    const updated = repositories.dispatches.update(dispatch.id, updates);
+    if (updated) {
+      recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'update', before, after: updated });
+      load();
     }
   };
 
-  const handleDeleteClick = (dispatch: Dispatch) => {
-    setDeletingDispatch(dispatch);
-    setDeleteDialogOpen(true);
+  const createRun = (dispatch: Dispatch) => {
+    if (!dispatch.serviceDate) return;
+    if (isMonthLocked(String(dispatch.serviceDate))) return toast.error('잠금 월', '확정된 정산월은 운행 생성/수정이 불가합니다.');
+    const route = repositories.routes.getById(dispatch.routeId);
+    const run = repositories.runs.create({
+      dispatchId: dispatch.id,
+      routeId: dispatch.routeId,
+      driverId: dispatch.plannedDriverId ?? null,
+      serviceDate: dispatch.serviceDate,
+      allowanceAmount: route?.baseAllowanceAmount ?? route?.baseRate ?? 0,
+      status: 'completed',
+      confirmedAt: new Date().toISOString(),
+      confirmedBy: '관리자',
+    });
+    recordChangeLog({ entityType: 'run', entityId: run.id, action: 'create', after: run });
+    load();
   };
 
-  const handleConfirmDelete = () => {
-    if (!deletingDispatch) return;
-    try {
-      repositories.dispatches.delete(deletingDispatch.id);
-      toast.success('배차 삭제 완료', '배차가 삭제되었습니다');
-      loadDispatches();
-      setDeleteDialogOpen(false);
-      setDeletingDispatch(null);
-    } catch {
-      toast.error('배차 삭제 실패', t('common.retry'));
+  const changeRun = (run: Run, updates: Partial<Run>) => {
+    if (isMonthLocked(String(run.serviceDate))) return toast.error('잠금 월', '정산 확정된 월입니다. 임시저장으로 되돌린 후 수정하세요.');
+    const before = { ...run };
+    const updated = repositories.runs.update(run.id, updates);
+    if (updated) {
+      recordChangeLog({ entityType: 'run', entityId: run.id, action: 'update', before, after: updated });
+      load();
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth');
-    router.push('/login');
-  };
-
-  // Filtered data
-  const filteredDispatches = dispatches.filter(d => {
-    const matchesSearch = d.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         d.routeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         d.driverId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const drivers = repositories.drivers.getAll().filter((d) => d.status === 'active');
+  const filteredDispatches = rows.filter((d) => {
+    const date = String(d.serviceDate ?? d.scheduledDate).slice(0, 10);
+    const routeName = repositories.routes.getById(d.routeId)?.name ?? '';
+    const driverName = repositories.drivers.getById(d.plannedDriverId ?? '')?.name ?? '';
+    const byDate = date === serviceDate;
+    const byStatus = statusFilter === 'all' || d.status === statusFilter;
+    const q = search.toLowerCase();
+    const bySearch = routeName.toLowerCase().includes(q) || driverName.toLowerCase().includes(q);
+    return byDate && byStatus && bySearch;
   });
 
-  const stats = {
-    total: dispatches.length,
-    completed: dispatches.filter(d => d.status === 'completed').length,
-    inProgress: dispatches.filter(d => d.status === 'in-progress').length,
-    pending: dispatches.filter(d => d.status === 'pending').length,
-    cancelled: dispatches.filter(d => d.status === 'cancelled').length,
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, any> = {
-      'completed': 'default',
-      'in-progress': 'warning',
-      'pending': 'secondary',
-      'confirmed': 'primary',
-      'cancelled': 'destructive',
-    };
-    return variants[status] || 'default';
-  };
-
   return (
-    <SidebarLayout
-      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
-      header={
-        <Header
-          title={t('nav.dispatches')}
-          rightContent={
-            <button
-              onClick={handleLogout}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              로그아웃
-            </button>
-          }
-        />
-      }
-    >
+    <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.dispatches')} />}>
       <PageContent>
-        {/* Stats */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <StatCard label="전체" value={stats.total} icon="📦" />
-          <StatCard label="완료" value={stats.completed} icon="✅" />
-          <StatCard label="진행 중" value={stats.inProgress} icon="🔄" />
-          <StatCard label="대기" value={stats.pending} icon="⏱" />
-          <StatCard label="취소" value={stats.cancelled} icon="❌" />
+        <Grid columns={4} className="mb-4">
+          <StatCard label="당일 배차" value={filteredDispatches.length} />
+          <StatCard label="게시" value={filteredDispatches.filter((d) => d.status === 'published').length} />
+          <StatCard label="마감" value={filteredDispatches.filter((d) => d.status === 'closed').length} />
+          <StatCard label="당일 운행" value={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate).length} />
+        </Grid>
+
+        <div className="mb-4 flex gap-2">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input px-3 py-2 text-sm" />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input px-3 py-2 text-sm">
+            <option value="all">전체 상태</option>
+            <option value="draft">임시저장</option>
+            <option value="published">게시</option>
+            <option value="closed">마감</option>
+            <option value="canceled">취소</option>
+          </select>
+          <Button onClick={autoGenerate}>자동 생성</Button>
         </div>
 
-        {/* Filter & Actions */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="배차 검색"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
-            >
-              <option value="all">전체 상태</option>
-              <option value="pending">대기</option>
-              <option value="confirmed">확정</option>
-              <option value="in-progress">진행 중</option>
-              <option value="completed">완료</option>
-              <option value="cancelled">취소</option>
-            </select>
-          </div>
-          <Button
-            onClick={() => handleOpenForm()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            + 배차 추가
-          </Button>
-        </div>
-
-        {/* Data Table */}
-        <DataList<Dispatch>
+        <DataList
           data={filteredDispatches}
-          isLoading={loading}
           columns={[
-            {
-              key: 'id',
-              label: '번호',
-              render: (value) => <span className="font-mono text-sm">{value}</span>,
-            },
-            {
-              key: 'routeId',
-              label: '노선',
-              render: (value) => <span className="text-sm font-medium">{value}</span>,
-            },
-            {
-              key: 'driverId',
-              label: '기사',
-              render: (value) => <span className="text-sm">{value}</span>,
-            },
-            {
-              key: 'scheduledDate',
-              label: '날짜',
-              render: (value) => <span className="text-sm">{formatDate(value)}</span>,
-            },
-            {
-              key: 'scheduledTime',
-              label: '시간',
-              render: (value) => <span className="text-sm font-medium">{value}</span>,
-            },
-            {
-              key: 'status',
-              label: '상태',
-              render: (value) => (
-                <Badge variant={getStatusBadgeVariant(value)}>
-                  {getStatusLabel(value)}
-                </Badge>
-              ),
-            },
+            { key: 'routeId', label: '노선', render: (v) => repositories.routes.getById(String(v))?.name ?? '-' },
+            { key: 'plannedDriverId', label: '계획 기사', render: (_, d) => <select value={d.plannedDriverId ?? ''} onChange={(e) => updateDispatch(d, { plannedDriverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
+            { key: 'serviceDate', label: '운행일', render: (v) => formatDate(new Date(String(v)), 'long') },
+            { key: 'status', label: '상태', render: (v, d) => <div className="flex items-center gap-2"><Badge>{getDispatchStatusLabel(v)}</Badge><select value={d.status} onChange={(e) => updateDispatch(d, { status: e.target.value as Dispatch['status'] })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="draft">임시저장</option><option value="published">게시</option><option value="closed">마감</option><option value="canceled">취소</option></select></div> },
           ]}
-          actions={(dispatch) => (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleOpenForm(dispatch)}
-              >
-                수정
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDeleteClick(dispatch)}
-              >
-                삭제
-              </Button>
-            </div>
-          )}
+          actions={(d) => <Button size="sm" onClick={() => createRun(d)}>운행 생성(확정)</Button>}
+        />
+
+        <h3 className="mb-2 mt-6 font-semibold">운행 목록</h3>
+        <DataList
+          data={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate)}
+          columns={[
+            { key: 'serviceDate', label: '운행일', render: (v) => formatDate(new Date(String(v)), 'long') },
+            { key: 'driverId', label: '귀속 기사', render: (_, r) => <select value={r.driverId ?? ''} onChange={(e) => changeRun(r, { driverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
+            { key: 'status', label: '상태', render: (_, r) => <select value={r.status} onChange={(e) => changeRun(r, { status: e.target.value as Run['status'] })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="completed">완료</option><option value="absence">결근</option><option value="holiday">휴무</option><option value="canceled">취소</option></select> },
+            { key: 'allowanceAmount', label: '수당', render: (v) => formatKRW(Number(v)) },
+            { key: 'confirmedAt', label: '확정', render: (_, r) => <Badge>{r.confirmedAt ? '확정됨' : getRunStatusLabel(r.status)}</Badge> },
+          ]}
         />
       </PageContent>
-
-      {/* Create/수정 Form Modal */}
-      <ModalForm
-        isOpen={isModalOpen}
-        title={editingDispatch ? '배차 수정' : '배차 추가'}
-        onOpenChange={setIsModalOpen}
-        onSubmit={handleSaveDispatch}
-        submitLabel={editingDispatch ? '수정' : '배차 등록'}
-      >
-        <FormField
-          label="노선"
-          error={formErrors.routeId}
-          required
-        >
-          <input
-            type="text"
-            value={formData.routeId}
-            onChange={(e) => setFormData({...formData, routeId: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="노선 ID를 입력하세요"
-          />
-        </FormField>
-
-        <FormField
-          label="기사"
-          error={formErrors.driverId}
-          required
-        >
-          <input
-            type="text"
-            value={formData.driverId}
-            onChange={(e) => setFormData({...formData, driverId: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="기사 ID를 입력하세요"
-          />
-        </FormField>
-
-        <FormField
-          label="배차일"
-          error={formErrors.scheduledDate}
-          required
-        >
-          <input
-            type="date"
-            value={formData.scheduledDate}
-            onChange={(e) => setFormData({...formData, scheduledDate: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </FormField>
-
-        <FormField
-          label="배차 시간"
-          error={formErrors.scheduledTime}
-          required
-        >
-          <input
-            type="time"
-            value={formData.scheduledTime}
-            onChange={(e) => setFormData({...formData, scheduledTime: e.target.value})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </FormField>
-
-        <FormField label="상태" required>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="pending">대기</option>
-            <option value="confirmed">확정</option>
-            <option value="in-progress">진행 중</option>
-            <option value="completed">완료</option>
-            <option value="cancelled">취소</option>
-          </select>
-        </FormField>
-      </ModalForm>
-
-      {/* 삭제 Confirmation Dialog */}
-      <ConfirmDeleteDialog
-        isOpen={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        entityName="배차"
-        displayValue={deletingDispatch?.id || ''}
-        onConfirm={handleConfirmDelete}
-      />
     </SidebarLayout>
   );
 }
