@@ -9,7 +9,8 @@ interface NavItem {
   label: string;
   href: string;
   icon?: React.ReactNode;
-  badge?: number;
+  badge?: number | string;
+  disabled?: boolean;
 }
 
 interface SidebarProps {
@@ -47,6 +48,34 @@ export function Sidebar({ items, title = 'Navigation', collapsed = false }: Side
       <nav className="space-y-1 px-2 py-4">
         {items.map((item) => {
           const isActive = pathname === item.href;
+          if (item.disabled) {
+            return (
+              <button
+                key={item.href}
+                type="button"
+                disabled
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium opacity-60 cursor-not-allowed',
+                  'text-sidebar-foreground',
+                  isCollapsed && 'justify-center'
+                )}
+                title={`${item.label} (준비중)`}
+              >
+                {item.icon && <div className="flex-shrink-0">{item.icon}</div>}
+                {!isCollapsed && (
+                  <>
+                    <span className="flex-1">{item.label}</span>
+                    {item.badge !== undefined && (
+                      <span className="rounded-full bg-sidebar-primary/30 px-2 py-0.5 text-xs font-semibold text-sidebar-primary">
+                        {item.badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          }
+
           return (
             <Link
               key={item.href}
@@ -64,7 +93,7 @@ export function Sidebar({ items, title = 'Navigation', collapsed = false }: Side
               {!isCollapsed && (
                 <>
                   <span className="flex-1">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
+                  {item.badge !== undefined && (
                     <span className="rounded-full bg-sidebar-primary/30 px-2 py-0.5 text-xs font-semibold text-sidebar-primary">
                       {item.badge}
                     </span>
