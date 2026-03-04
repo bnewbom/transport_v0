@@ -322,10 +322,10 @@ export function initializeMockData() {
 
   // Activities
   mockData.activities = [
-    { id: 'A001', type: 'dispatch', action: 'Dispatch created', entityType: 'Dispatch', entityId: 'DP001', timestamp: new Date('2023-05-01T08:00:00') },
-    { id: 'A002', type: 'operation', action: 'Operation completed', entityType: 'OperationLog', entityId: 'OL001', timestamp: new Date('2023-05-01T09:30:00') },
-    { id: 'A003', type: 'payment', action: 'Payroll approved', entityType: 'PayrollSlip', entityId: 'PS001', timestamp: new Date('2023-05-30T14:00:00') },
-    { id: 'A004', type: 'financial', action: 'Income recorded', entityType: 'FinancialRecord', entityId: 'FR005', timestamp: new Date('2023-05-25T10:30:00') },
+    { id: 'A001', type: 'dispatch', action: '배차가 등록되었습니다', entityType: 'Dispatch', entityId: 'DP001', timestamp: new Date('2023-05-01T08:00:00') },
+    { id: 'A002', type: 'operation', action: '운영 로그가 완료되었습니다', entityType: 'OperationLog', entityId: 'OL001', timestamp: new Date('2023-05-01T09:30:00') },
+    { id: 'A003', type: 'payment', action: '급여 정산이 승인되었습니다', entityType: 'PayrollSlip', entityId: 'PS001', timestamp: new Date('2023-05-30T14:00:00') },
+    { id: 'A004', type: 'financial', action: '수입이 기록되었습니다', entityType: 'FinancialRecord', entityId: 'FR005', timestamp: new Date('2023-05-25T10:30:00') },
   ];
 }
 

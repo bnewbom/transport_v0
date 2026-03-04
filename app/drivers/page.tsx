@@ -26,7 +26,7 @@ export default function DriversPage() {
 
   // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingDriver, setEditingDriver] = React.useState<Driver | null>(null);
+  const [editingDriver, set수정ingDriver] = React.useState<Driver | null>(null);
   const [formData, setFormData] = React.useState({
     name: '',
     phone: '',
@@ -38,7 +38,7 @@ export default function DriversPage() {
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
 
-  // Delete state
+  // 삭제 state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingDriver, setDeletingDriver] = React.useState<Driver | null>(null);
 
@@ -71,7 +71,7 @@ export default function DriversPage() {
 
   const handleOpenForm = (driver?: Driver) => {
     if (driver) {
-      setEditingDriver(driver);
+      set수정ingDriver(driver);
       setFormData({
         name: driver.name,
         phone: driver.phone,
@@ -82,7 +82,7 @@ export default function DriversPage() {
         accountHolder: driver.accountHolder || '',
       });
     } else {
-      setEditingDriver(null);
+      set수정ingDriver(null);
       setFormData({
         name: '',
         phone: '',
@@ -166,7 +166,7 @@ export default function DriversPage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -197,16 +197,16 @@ export default function DriversPage() {
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
               <option value="all">{t('common.all')} {t('common.status')}</option>
-              <option value="active">Active</option>
-              <option value="on-leave">On Leave</option>
-              <option value="inactive">Inactive</option>
+              <option value="active">활성</option>
+              <option value="on-leave">휴무</option>
+              <option value="inactive">비활성</option>
             </select>
           </div>
           <Button
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Add Driver
+            + 기사 추가
           </Button>
         </div>
 
@@ -217,26 +217,26 @@ export default function DriversPage() {
           columns={[
             {
               key: 'name',
-              label: 'Name',
+              label: '이름',
               render: (value) => <span className="font-medium">{value}</span>,
             },
             {
               key: 'phone',
-              label: 'Phone',
+              label: '연락처',
             },
             {
               key: 'licenseNumber',
-              label: 'License Number',
+              label: '면허번호',
               render: (value) => <span className="font-mono text-sm">{value}</span>,
             },
             {
               key: 'joinDate',
-              label: 'Join Date',
+              label: '입사일',
               render: (value) => <span className="text-sm text-muted-foreground">{formatDate(value)}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => {
                 const variantMap = {
                   active: 'default',
@@ -258,21 +258,21 @@ export default function DriversPage() {
                 variant="outline"
                 onClick={() => handleOpenForm(driver)}
               >
-                Edit
+                수정
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleDeleteClick(driver)}
               >
-                Delete
+                삭제
               </Button>
             </div>
           )}
         />
       </PageContent>
 
-      {/* Create/Edit Form Modal */}
+      {/* Create/수정 Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
         title={editingDriver ? '기사 수정' : '기사 추가'}
@@ -360,20 +360,20 @@ export default function DriversPage() {
           />
         </FormField>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as 'active' | 'inactive' | 'on-leave'})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="active">Active</option>
-            <option value="on-leave">On Leave</option>
-            <option value="inactive">Inactive</option>
+            <option value="active">활성</option>
+            <option value="on-leave">휴무</option>
+            <option value="inactive">비활성</option>
           </select>
         </FormField>
       </ModalForm>
 
-      {/* Delete Confirmation Dialog */}
+      {/* 삭제 Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

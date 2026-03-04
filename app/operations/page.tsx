@@ -49,7 +49,7 @@ export default function OperationsPage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -58,24 +58,24 @@ export default function OperationsPage() {
       <PageContent>
         {/* Stats */}
         <Grid columns={4} gap="md" className="mb-8">
-          <StatCard label="Total Operations" value={logs.length} icon="⚙️" />
-          <StatCard label="Completed" value={completed} icon="✅" />
-          <StatCard label="In Progress" value={inProgress} icon="🔄" />
-          <StatCard label="Pending" value={pending} icon="⏱" />
+          <StatCard label="총 운영 로그" value={logs.length} icon="⚙️" />
+          <StatCard label="완료" value={completed} icon="✅" />
+          <StatCard label="진행 중" value={inProgress} icon="🔄" />
+          <StatCard label="대기" value={pending} icon="⏱" />
         </Grid>
 
         {/* Filter & Actions */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex gap-2">
             <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none">
-              <option>All Status</option>
-              <option>Pending</option>
-              <option>In Progress</option>
-              <option>Completed</option>
+              <option>전체 상태</option>
+              <option>대기</option>
+              <option>진행 중</option>
+              <option>완료</option>
             </select>
           </div>
           <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            + New Operation
+            + 운영 로그 추가
           </button>
         </div>
 
@@ -86,32 +86,32 @@ export default function OperationsPage() {
           columns={[
             {
               key: 'dispatchId',
-              label: 'Dispatch',
+              label: '배차',
               render: (value) => <span className="font-mono text-sm">{value}</span>,
             },
             {
               key: 'driverId',
-              label: 'Driver',
+              label: '기사',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'distance',
-              label: 'Distance',
+              label: '거리',
               render: (value) => <span className="text-sm">{value ? `${value} km` : '—'}</span>,
             },
             {
               key: 'fuelUsed',
-              label: 'Fuel Used',
+              label: '유류 사용량',
               render: (value) => <span className="text-sm">{value ? `${value} L` : '—'}</span>,
             },
             {
               key: 'actualEndTime',
-              label: 'End Time',
+              label: '종료 시각',
               render: (value) => <span className="text-sm">{value ? formatDateTime(value) : '—'}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={value === 'completed' ? 'success' : value === 'in-progress' ? 'warning' : 'secondary'}>
                   {getStatusLabel(value)}

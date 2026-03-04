@@ -26,7 +26,7 @@ export default function RoutesPage() {
 
   // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingRoute, setEditingRoute] = React.useState<Route | null>(null);
+  const [editingRoute, set수정ingRoute] = React.useState<Route | null>(null);
   const [formData, setFormData] = React.useState({
     name: '',
     startLocation: '',
@@ -38,7 +38,7 @@ export default function RoutesPage() {
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
 
-  // Delete state
+  // 삭제 state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingRoute, setDeletingRoute] = React.useState<Route | null>(null);
 
@@ -62,19 +62,19 @@ export default function RoutesPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.name.trim()) errors.name = 'Route name is required';
-    if (!formData.startLocation.trim()) errors.startLocation = 'Start location is required';
-    if (!formData.endLocation.trim()) errors.endLocation = 'End location is required';
-    if (formData.distance <= 0) errors.distance = 'Distance must be greater than 0';
-    if (formData.estimatedTime <= 0) errors.estimatedTime = 'Estimated time must be greater than 0';
-    if (formData.baseRate <= 0) errors.baseRate = 'Base rate must be greater than 0';
+    if (!formData.name.trim()) errors.name = '노선명은 필수 입력입니다';
+    if (!formData.startLocation.trim()) errors.startLocation = '출발지는 필수 입력입니다';
+    if (!formData.endLocation.trim()) errors.endLocation = '도착지는 필수 입력입니다';
+    if (formData.distance <= 0) errors.distance = '거리는 0보다 커야 합니다';
+    if (formData.estimatedTime <= 0) errors.estimatedTime = '예상 시간은 0보다 커야 합니다';
+    if (formData.baseRate <= 0) errors.baseRate = '기본 요금은 0보다 커야 합니다';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleOpenForm = (route?: Route) => {
     if (route) {
-      setEditingRoute(route);
+      set수정ingRoute(route);
       setFormData({
         name: route.name,
         startLocation: route.startLocation,
@@ -85,7 +85,7 @@ export default function RoutesPage() {
         status: route.status,
       });
     } else {
-      setEditingRoute(null);
+      set수정ingRoute(null);
       setFormData({
         name: '',
         startLocation: '',
@@ -165,7 +165,7 @@ export default function RoutesPage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -195,16 +195,16 @@ export default function RoutesPage() {
               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="all">전체 상태</option>
+              <option value="active">활성</option>
+              <option value="inactive">비활성</option>
             </select>
           </div>
           <Button
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Add Route
+            + 노선 추가
           </Button>
         </div>
 
@@ -215,32 +215,32 @@ export default function RoutesPage() {
           columns={[
             {
               key: 'name',
-              label: 'Route Name',
+              label: '노선명',
               render: (value) => <span className="font-medium">{value}</span>,
             },
             {
               key: 'startLocation',
-              label: 'Start',
+              label: '출발지',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'endLocation',
-              label: 'End',
+              label: '도착지',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'distance',
-              label: 'Distance',
+              label: '거리',
               render: (value) => <span className="font-medium">{value} km</span>,
             },
             {
               key: 'baseRate',
-              label: 'Base Rate',
+              label: '기본 요금',
               render: (value) => <span className="font-medium">{formatKRW(value as number)}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={value === 'active' ? 'default' : 'secondary'}>
                   {getStatusLabel(value)}
@@ -255,21 +255,21 @@ export default function RoutesPage() {
                 variant="outline"
                 onClick={() => handleOpenForm(route)}
               >
-                Edit
+                수정
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleDeleteClick(route)}
               >
-                Delete
+                삭제
               </Button>
             </div>
           )}
         />
       </PageContent>
 
-      {/* Create/Edit Form Modal */}
+      {/* Create/수정 Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
         title={editingRoute ? '노선 수정' : '노선 추가'}
@@ -364,19 +364,19 @@ export default function RoutesPage() {
           />
         </FormField>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as 'active' | 'inactive'})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
           </select>
         </FormField>
       </ModalForm>
 
-      {/* Delete Confirmation Dialog */}
+      {/* 삭제 Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

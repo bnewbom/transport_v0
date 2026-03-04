@@ -27,7 +27,7 @@ export default function ClientsPage() {
   
   // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingClient, setEditingClient] = React.useState<Client | null>(null);
+  const [editingClient, set수정ingClient] = React.useState<Client | null>(null);
   const [formData, setFormData] = React.useState({
     name: '',
     phone: '',
@@ -36,7 +36,7 @@ export default function ClientsPage() {
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
   
-  // Delete state
+  // 삭제 state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingClient, setDeletingClient] = React.useState<Client | null>(null);
   
@@ -69,7 +69,7 @@ export default function ClientsPage() {
 
   const handleOpenForm = (client?: Client) => {
     if (client) {
-      setEditingClient(client);
+      set수정ingClient(client);
       setFormData({
         name: client.name,
         phone: client.phone,
@@ -77,7 +77,7 @@ export default function ClientsPage() {
         status: client.status,
       });
     } else {
-      setEditingClient(null);
+      set수정ingClient(null);
       setFormData({
         name: '',
         phone: '',
@@ -156,7 +156,7 @@ export default function ClientsPage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -194,7 +194,7 @@ export default function ClientsPage() {
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Add Client
+            + 거래처 추가
           </Button>
         </div>
 
@@ -214,12 +214,12 @@ export default function ClientsPage() {
             },
             {
               key: 'address',
-              label: 'Address',
+              label: '주소',
               render: (value) => <span className="truncate text-sm">{value}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={value === 'active' ? 'default' : 'secondary'}>
                   {getStatusLabel(value)}
@@ -239,21 +239,21 @@ export default function ClientsPage() {
                 variant="outline"
                 onClick={() => handleOpenForm(client)}
               >
-                Edit
+                수정
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleDeleteClick(client)}
               >
-                Delete
+                삭제
               </Button>
             </div>
           )}
         />
       </PageContent>
 
-      {/* Create/Edit Form Modal */}
+      {/* Create/수정 Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
         title={editingClient ? '거래처 수정' : '거래처 추가'}
@@ -315,7 +315,7 @@ export default function ClientsPage() {
         </FormField>
       </ModalForm>
 
-      {/* Delete Confirmation Dialog */}
+      {/* 삭제 Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

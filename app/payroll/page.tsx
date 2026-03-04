@@ -64,7 +64,7 @@ export default function PayrollPage() {
     const errors: Record<string, string> = {};
     if (!formData.driverId.trim()) errors.driverId = t('common.required');
     if (!formData.period.trim()) errors.period = t('common.required');
-    if (formData.baseAmount <= 0) errors.baseAmount = 'Base amount must be greater than 0';
+    if (formData.baseAmount <= 0) errors.baseAmount = '기본 급여는 0보다 커야 합니다';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -184,7 +184,7 @@ export default function PayrollPage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -214,17 +214,17 @@ export default function PayrollPage() {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="approved">Approved</option>
-              <option value="paid">Paid</option>
+              <option value="all">전체 상태</option>
+              <option value="draft">임시</option>
+              <option value="approved">승인</option>
+              <option value="paid">지급</option>
             </select>
             <select
               value={periodFilter}
               onChange={(e) => setPeriodFilter(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Periods</option>
+              <option value="all">전체 기간</option>
               {periods.map(period => (
                 <option key={period} value={period}>{period}</option>
               ))}
@@ -234,7 +234,7 @@ export default function PayrollPage() {
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Generate Payroll
+            + 급여 정산 생성
           </Button>
         </div>
 
@@ -255,12 +255,12 @@ export default function PayrollPage() {
             },
             {
               key: 'baseAmount',
-              label: 'Base',
+              label: '기본급',
               render: (value) => <span className="text-sm">{formatKRW(value as number)}</span>,
             },
             {
               key: 'bonusAmount',
-              label: 'Bonus',
+              label: '보너스',
               render: (value, item) => (
                 <span className="text-sm text-green-600 dark:text-green-400">
                   {value && (value as number) > 0 ? '+' + formatKRW(value as number) : '—'}
@@ -269,7 +269,7 @@ export default function PayrollPage() {
             },
             {
               key: 'deductionAmount',
-              label: 'Deduction',
+              label: '공제',
               render: (value) => (
                 <span className="text-sm text-red-600 dark:text-red-400">
                   {value && (value as number) > 0 ? '-' + formatKRW(value as number) : '—'}
@@ -278,12 +278,12 @@ export default function PayrollPage() {
             },
             {
               key: 'totalAmount',
-              label: 'Total',
+              label: '합계',
               render: (value) => <span className="font-medium">{formatKRW(value as number)}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={getStatusBadgeVariant(value)}>
                   {getStatusLabel(value)}
@@ -399,15 +399,15 @@ export default function PayrollPage() {
           </p>
         </div>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as any})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="draft">Draft</option>
-            <option value="approved">Approved</option>
-            <option value="paid">Paid</option>
+            <option value="draft">임시</option>
+            <option value="approved">승인</option>
+            <option value="paid">지급</option>
           </select>
         </FormField>
       </ModalForm>

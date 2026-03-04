@@ -37,7 +37,7 @@ export function Sidebar({ items, title = 'Navigation', collapsed = false }: Side
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="flex h-8 w-8 items-center justify-center rounded hover:bg-sidebar-accent text-sidebar-foreground"
-          aria-label="Toggle sidebar"
+          aria-label="사이드바 토글"
         >
           {isCollapsed ? '→' : '←'}
         </button>

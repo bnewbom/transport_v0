@@ -16,7 +16,22 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
+type FinanceType = 'income' | 'expense';
+type FinanceCategory = FinancialRecord['category'];
 
+const CATEGORIES: Record<FinanceType, readonly FinanceCategory[]> = {
+  income: ['route-revenue'],
+  expense: ['fuel', 'maintenance', 'salary', 'insurance', 'other'],
+} as const;
+
+const CATEGORY_LABEL: Record<FinanceCategory, string> = {
+  'route-revenue': '노선 수익',
+  fuel: '유류비',
+  maintenance: '정비비',
+  salary: '급여',
+  insurance: '보험',
+  other: '기타',
+};
 
 export default function FinancePage() {
   const router = useRouter();
@@ -24,12 +39,11 @@ export default function FinancePage() {
   const [records, setRecords] = React.useState<FinancialRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [editingRecord, setEditingRecord] = React.useState<FinancialRecord | null>(null);
   const [formData, setFormData] = React.useState({
-    type: 'income' as const,
-    category: 'route-revenue' as const,
+    type: 'income' as FinanceType,
+    category: 'route-revenue' as FinanceCategory,
     description: '',
     amount: 0,
     date: new Date(),
@@ -37,14 +51,12 @@ export default function FinancePage() {
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
 
-  // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingRecord, setDeletingRecord] = React.useState<FinancialRecord | null>(null);
 
-  // Search & Filter
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [typeFilter, setTypeFilter] = React.useState<'all' | 'income' | 'expense'>('all');
-  const [categoryFilter, setCategoryFilter] = React.useState('all');
+  const [typeFilter, setTypeFilter] = React.useState<'all' | FinanceType>('all');
+  const [categoryFilter, setCategoryFilter] = React.useState<'all' | FinanceCategory>('all');
 
   React.useEffect(() => {
     const auth = localStorage.getItem('auth');
@@ -63,7 +75,7 @@ export default function FinancePage() {
   const validateForm = () => {
     const errors: Record<string, string> = {};
     if (!formData.description.trim()) errors.description = t('common.required');
-    if (formData.amount <= 0) errors.amount = 'Amount must be greater than 0';
+    if (formData.amount <= 0) errors.amount = '금액은 0보다 커야 합니다';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -111,7 +123,7 @@ export default function FinancePage() {
       }
       loadRecords();
       setIsDrawerOpen(false);
-    } catch (error) {
+    } catch {
       toast.error('거래 저장 실패', t('common.retry'));
     }
   };
@@ -129,8 +141,8 @@ export default function FinancePage() {
       loadRecords();
       setDeleteDialogOpen(false);
       setDeletingRecord(null);
-    } catch (error) {
-      toast.error('Failed to delete record', t('common.retry'));
+    } catch {
+      toast.error('거래 삭제 실패', t('common.retry'));
     }
   };
 
@@ -139,21 +151,21 @@ export default function FinancePage() {
     router.push('/login');
   };
 
-  // Filtered data
-  const filteredRecords = records.filter(r => {
-    const matchesSearch = r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (r.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+  const filteredRecords = records.filter((r) => {
+    const matchesSearch =
+      r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     const matchesType = typeFilter === 'all' || r.type === typeFilter;
     const matchesCategory = categoryFilter === 'all' || r.category === categoryFilter;
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  const income = filteredRecords.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
-  const expense = filteredRecords.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+  const income = filteredRecords.filter((r) => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
+  const expense = filteredRecords.filter((r) => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
   const profit = income - expense;
 
-  // Available categories based on selected type
-  const availableCategories = CATEGORIES[formData.type] || [];
+  const safeType: FinanceType = formData.type ?? 'expense';
+  const availableCategories = CATEGORIES[safeType] ?? CATEGORIES.expense;
 
   return (
     <SidebarLayout
@@ -166,100 +178,84 @@ export default function FinancePage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
       }
     >
       <PageContent>
-        {/* Stats */}
         <Grid columns={3} gap="md" className="mb-8">
-          <StatCard 
-            label="Total Income" 
-            value={formatKRW(income)} 
-            icon="💵"
-          />
-          <StatCard 
-            label="Total Expense" 
-            value={formatKRW(expense)} 
-            icon="💸"
-          />
-          <StatCard 
-            label="Net Profit" 
-            value={formatKRW(profit)} 
-            icon="📈"
-          />
+          <StatCard label="총수입" value={formatKRW(income)} icon="💵" />
+          <StatCard label="총지출" value={formatKRW(expense)} icon="💸" />
+          <StatCard label="순이익" value={formatKRW(profit)} icon="📈" />
         </Grid>
 
-        {/* Filter & Actions */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search transactions..."
+              placeholder="거래 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
             />
             <select
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as any)}
+              onChange={(e) => setTypeFilter(e.target.value as 'all' | FinanceType)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
+              <option value="all">전체 유형</option>
+              <option value="income">수입</option>
+              <option value="expense">지출</option>
             </select>
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => setCategoryFilter(e.target.value as 'all' | FinanceCategory)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Categories</option>
-              <option value="route-revenue">Route Revenue</option>
-              <option value="fuel">Fuel</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="salary">Salary</option>
-              <option value="insurance">Insurance</option>
-              <option value="other">Other</option>
+              <option value="all">전체 카테고리</option>
+              {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
           <Button
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Record Transaction
+            + 거래 추가
           </Button>
         </div>
 
-        {/* Data Table */}
         <DataList<FinancialRecord>
           data={filteredRecords}
           isLoading={loading}
           columns={[
             {
               key: 'type',
-              label: 'Type',
+              label: '유형',
               render: (value) => (
                 <Badge variant={value === 'income' ? 'default' : 'secondary'}>
-                  {value === 'income' ? 'Income' : 'Expense'}
+                  {value === 'income' ? '수입' : '지출'}
                 </Badge>
               ),
             },
             {
               key: 'category',
-              label: 'Category',
-              render: (value) => <span className="text-sm capitalize">{String(value).replace(/-/g, ' ')}</span>,
+              label: '카테고리',
+              render: (value) => <span className="text-sm">{CATEGORY_LABEL[value as FinanceCategory]}</span>,
             },
             {
               key: 'description',
-              label: 'Description',
+              label: '설명',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'amount',
-              label: 'Amount',
+              label: '금액',
               render: (value, item) => (
                 <span className={`font-medium ${item.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {item.type === 'income' ? '+' : '-'}{formatKRW(value as number)}
@@ -268,129 +264,108 @@ export default function FinancePage() {
             },
             {
               key: 'date',
-              label: 'Date',
+              label: '날짜',
               render: (value) => <span className="text-sm text-muted-foreground">{formatDate(value)}</span>,
             },
           ]}
           actions={(record) => (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleOpenForm(record)}
-              >
-                Edit
+              <Button size="sm" variant="outline" onClick={() => handleOpenForm(record)}>
+                수정
               </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDeleteClick(record)}
-              >
-                Delete
+              <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(record)}>
+                삭제
               </Button>
             </div>
           )}
-          emptyMessage="No financial records found"
+          emptyMessage="거래 내역이 없습니다"
         />
       </PageContent>
 
-      {/* Create/Edit Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
-        title={editingRecord ? 'Edit Transaction' : 'Record New Transaction'}
+        title={editingRecord ? '거래 수정' : '거래 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveRecord}
-        submitLabel={editingRecord ? 'Update' : 'Record'}
+        submitLabel={editingRecord ? '수정' : '저장'}
       >
-        <FormField label="Type" required>
+        <FormField label="유형" required>
           <select
             value={formData.type}
             onChange={(e) => {
-              const newType = e.target.value as 'income' | 'expense';
+              const newType = e.target.value as FinanceType;
               setFormData({
                 ...formData,
                 type: newType,
-                category: CATEGORIES[newType][0] as any,
+                category: CATEGORIES[newType][0],
               });
             }}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
+            <option value="income">수입</option>
+            <option value="expense">지출</option>
           </select>
         </FormField>
 
-        <FormField label="Category" required>
+        <FormField label="카테고리" required>
           <select
             value={formData.category}
-            onChange={(e) => setFormData({...formData, category: e.target.value as any})}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value as FinanceCategory })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            {availableCategories.map(cat => (
+            {availableCategories.map((cat) => (
               <option key={cat} value={cat}>
-                {cat.replace(/-/g, ' ').charAt(0).toUpperCase() + cat.replace(/-/g, ' ').slice(1)}
+                {CATEGORY_LABEL[cat]}
               </option>
             ))}
           </select>
         </FormField>
 
-        <FormField
-          label="Description"
-          error={formErrors.description}
-          required
-        >
+        <FormField label="설명" error={formErrors.description} required>
           <input
             type="text"
             value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter transaction description"
+            placeholder="거래 설명을 입력하세요"
           />
         </FormField>
 
-        <FormField
-          label="Amount (KRW)"
-          error={formErrors.amount}
-          required
-        >
+        <FormField label="금액(원)" error={formErrors.amount} required>
           <input
             type="number"
             min="1"
             value={formData.amount}
-            onChange={(e) => setFormData({...formData, amount: parseInt(e.target.value) || 0})}
+            onChange={(e) => setFormData({ ...formData, amount: parseInt(e.target.value) || 0 })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter amount"
+            placeholder="금액을 입력하세요"
           />
         </FormField>
 
-        <FormField label="Date" required>
+        <FormField label="날짜" required>
           <input
             type="date"
             value={formData.date instanceof Date ? formData.date.toISOString().split('T')[0] : ''}
-            onChange={(e) => setFormData({...formData, date: new Date(e.target.value)})}
+            onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </FormField>
 
-        <FormField
-          label="Reference"
-          help="Optional: Reference code or ID"
-        >
+        <FormField label="참조" help="선택: 참조 코드 또는 ID">
           <input
             type="text"
             value={formData.reference}
-            onChange={(e) => setFormData({...formData, reference: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="e.g., DP001, INV-123"
+            placeholder="예: DP001, INV-123"
           />
         </FormField>
       </ModalForm>
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Financial Record"
+        entityName="거래"
         displayValue={deletingRecord ? `${deletingRecord.description} (${formatKRW(deletingRecord.amount)})` : ''}
         onConfirm={handleConfirmDelete}
       />

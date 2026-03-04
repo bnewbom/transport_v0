@@ -62,7 +62,7 @@ export default function DashboardPage() {
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -84,8 +84,8 @@ export default function DashboardPage() {
             trend={{ value: -3.2, isPositive: false }}
           />
           <StatCard
-            label={t('pages.dashboard.activeDispatches')}
-            value={stats.activeDispatches}
+            label={t('pages.dashboard.active배차')}
+            value={stats.active배차}
             icon="📦"
           />
           <StatCard
@@ -97,39 +97,39 @@ export default function DashboardPage() {
 
         {/* Navigation Cards */}
         <div className="mb-12">
-          <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Quick Access</h3>
+          <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">빠른 메뉴</h3>
           <Grid columns={4} gap="md" className="md:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/clients"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">👥</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Clients</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage clients</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">거래처</h4>
+              <p className="mt-1 text-sm text-muted-foreground">거래처 관리</p>
             </Link>
             <Link
               href="/drivers"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">🚗</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Drivers</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage drivers</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">기사</h4>
+              <p className="mt-1 text-sm text-muted-foreground">기사 관리</p>
             </Link>
             <Link
               href="/routes"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">🗺</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Routes</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage routes</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">노선</h4>
+              <p className="mt-1 text-sm text-muted-foreground">노선 관리</p>
             </Link>
             <Link
               href="/dispatches"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">📋</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Dispatches</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage dispatches</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">배차</h4>
+              <p className="mt-1 text-sm text-muted-foreground">배차 관리</p>
             </Link>
           </Grid>
         </div>
@@ -137,9 +137,9 @@ export default function DashboardPage() {
         {/* Recent Activities */}
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-foreground">최근 활동</h2>
             <Link href="#" className="text-sm font-medium text-primary hover:underline">
-              View All
+              전체 보기
             </Link>
           </div>
 
