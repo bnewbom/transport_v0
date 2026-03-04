@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { t } from '@/lib/i18n';
 import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent, Grid, StatCard } from '@/components/layout-shell';
+import { PageContent, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { repositories } from '@/lib/repository';
-import { formatDate, formatDateTime, getStatusLabel } from '@/lib/formatters';
+import { formatDate, getStatusLabel } from '@/lib/formatters';
 import { Dispatch } from '@/lib/schemas';
 import { ModalForm } from '@/components/crud/modal-form';
 import { ConfirmDeleteDialog } from '@/components/crud/confirm-delete-dialog';
@@ -111,7 +111,7 @@ export default function DispatchesPage() {
       }
       loadDispatches();
       setIsModalOpen(false);
-    } catch (error) {
+    } catch {
       toast.error('배차 저장 실패', t('common.retry'));
     }
   };
@@ -129,7 +129,7 @@ export default function DispatchesPage() {
       loadDispatches();
       setDeleteDialogOpen(false);
       setDeletingDispatch(null);
-    } catch (error) {
+    } catch {
       toast.error('배차 삭제 실패', t('common.retry'));
     }
   };
