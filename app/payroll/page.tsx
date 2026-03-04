@@ -62,6 +62,8 @@ export default function PayrollPage() {
 
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [selectedSlip, setSelectedSlip] = React.useState<PayrollSlipWithLegacyDeduction | null>(null);
+  const [detailTab, setDetailTab] = React.useState<'summary' | 'logs'>('summary');
+  const [dispatchSearchTerm, setDispatchSearchTerm] = React.useState('');
 
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -183,6 +185,8 @@ export default function PayrollPage() {
 
   const handleOpenDetail = (slip: PayrollSlipWithLegacyDeduction) => {
     setSelectedSlip(slip);
+    setDetailTab('summary');
+    setDispatchSearchTerm('');
     setDetailOpen(true);
   };
 
@@ -197,6 +201,10 @@ export default function PayrollPage() {
     } catch {
       toast.error('급여 정산 삭제 실패', t('common.retry'));
     }
+  };
+
+  const handlePrintPayrollDetail = () => {
+    window.print();
   };
 
   const handleLogout = () => {
@@ -226,7 +234,6 @@ export default function PayrollPage() {
 
   const stats = {
     total: slips.length,
-    draft: slips.filter((s) => s.status === 'draft').length,
     approved: slips.filter((s) => s.status === 'approved').length,
     paid: slips.filter((s) => s.status === 'paid').length,
     totalPayable: slips.filter((s) => s.status !== 'paid').reduce((sum, s) => sum + s.totalAmount, 0),
@@ -251,6 +258,96 @@ export default function PayrollPage() {
         isDateInRange(dispatch.scheduledDate, detailPeriodRange),
     );
   }, [dispatches, detailPeriodRange, selectedSlip]);
+
+  const filteredDetailDispatches = React.useMemo(() => {
+    const keyword = dispatchSearchTerm.trim().toLowerCase();
+    if (!keyword) return detailDispatches;
+
+    return detailDispatches.filter((dispatch) => {
+      const routeName = routeMap.get(dispatch.routeId)?.name ?? '';
+      const clientName = clientMap.get(dispatch.clientId)?.name ?? '';
+      const scheduled = formatDate(dispatch.scheduledDate, 'long').toLowerCase();
+      return (
+        routeName.toLowerCase().includes(keyword) ||
+        clientName.toLowerCase().includes(keyword) ||
+        scheduled.includes(keyword)
+      );
+    });
+  }, [detailDispatches, dispatchSearchTerm, routeMap, clientMap]);
+
+  const renderPayrollItemsSection = (slip: PayrollSlipWithLegacyDeduction) => (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <h3 className="mb-3 text-base font-semibold">지급 항목</h3>
+      <div className="space-y-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">기본급</span>
+          <span>{formatKRW(slip.baseAmount)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">추가수당/보너스</span>
+          <span>{formatKRW(slip.bonusAmount)}</span>
+        </div>
+      </div>
+
+      <h3 className="mb-3 mt-6 text-base font-semibold">공제 항목</h3>
+      <div className="space-y-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">총 공제</span>
+          <span>{formatKRW(getSlipDeduction(slip))}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">국민연금</span>
+          <span>{formatKRW(0)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">건강보험</span>
+          <span>{formatKRW(0)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">고용보험/소득세</span>
+          <span>{formatKRW(0)}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDispatchTable = (rows: Dispatch[], scrollClassName: string) => (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <h3 className="mb-3 text-base font-semibold">운행일지</h3>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">해당 기간에 운행 기록이 없습니다.</p>
+      ) : (
+        <div className={`overflow-x-auto ${scrollClassName}`}>
+          <table className="payroll-print-table w-full text-sm">
+            <thead className="bg-card">
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="sticky top-0 bg-card py-2 pr-3">운행일자</th>
+                <th className="sticky top-0 bg-card py-2 pr-3">노선</th>
+                <th className="sticky top-0 bg-card py-2 pr-3">거래처</th>
+                <th className="sticky top-0 bg-card py-2 pr-3">추가운행</th>
+                <th className="sticky top-0 bg-card py-2">비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((dispatch) => {
+                const route = routeMap.get(dispatch.routeId);
+                const client = clientMap.get(dispatch.clientId);
+                return (
+                  <tr key={dispatch.id} className="border-b border-border/60 align-top">
+                    <td className="py-2 pr-3">{formatDate(dispatch.scheduledDate, 'long')}</td>
+                    <td className="py-2 pr-3">{route?.name ?? '알 수 없는 노선'}</td>
+                    <td className="py-2 pr-3">{client?.name ?? '알 수 없는 거래처'}</td>
+                    <td className="py-2 pr-3">{dispatch.status === 'completed' ? '완료 운행' : '기본 운행'}</td>
+                    <td className="py-2">{dispatch.notes || '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <SidebarLayout
@@ -481,10 +578,10 @@ export default function PayrollPage() {
       </ModalForm>
 
       {detailOpen && selectedSlip && detailPeriodRange && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDetailOpen(false)} />
-          <div className="relative z-10 mx-4 max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-background shadow-lg">
-            <div className="sticky top-0 border-b border-border bg-background px-6 py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center payroll-print-root">
+          <div className="absolute inset-0 bg-black/50 payroll-print-hide" onClick={() => setDetailOpen(false)} />
+          <div className="payroll-print-area relative z-10 mx-4 max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-background shadow-lg">
+            <div className="sticky top-0 border-b border-border bg-background px-6 py-4 payroll-print-header">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">급여 상세</h2>
@@ -515,83 +612,61 @@ export default function PayrollPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <h3 className="mb-3 text-base font-semibold">지급 항목</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">기본급</span>
-                      <span>{formatKRW(selectedSlip.baseAmount)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">추가수당/보너스</span>
-                      <span>{formatKRW(selectedSlip.bonusAmount)}</span>
-                    </div>
-                  </div>
+              {/* 모바일/태블릿: 기존 스택 레이아웃 유지 */}
+              <div className="space-y-4 lg:hidden">
+                {renderPayrollItemsSection(selectedSlip)}
+                {renderDispatchTable(detailDispatches, '')}
+              </div>
 
-                  <h3 className="mb-3 mt-6 text-base font-semibold">공제 항목</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">총 공제</span>
-                      <span>{formatKRW(getSlipDeduction(selectedSlip))}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">국민연금</span>
-                      <span>{formatKRW(0)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">건강보험</span>
-                      <span>{formatKRW(0)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">고용보험/소득세</span>
-                      <span>{formatKRW(0)}</span>
-                    </div>
-                  </div>
+              {/* PC: 탭 기반 레이아웃으로 전환 */}
+              <div className="hidden lg:block">
+                <div className="mb-4 flex items-center gap-2 border-b border-border pb-3 payroll-print-hide">
+                  <button
+                    type="button"
+                    onClick={() => setDetailTab('summary')}
+                    className={`rounded-md px-3 py-2 text-sm font-medium ${detailTab === 'summary' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+                  >
+                    급여 내역
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailTab('logs')}
+                    className={`rounded-md px-3 py-2 text-sm font-medium ${detailTab === 'logs' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+                  >
+                    운행 내역
+                  </button>
                 </div>
 
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <h3 className="mb-3 text-base font-semibold">운행일지</h3>
-                  {detailDispatches.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">해당 기간에 운행 기록이 없습니다.</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border text-left text-muted-foreground">
-                            <th className="py-2 pr-3">운행일자</th>
-                            <th className="py-2 pr-3">노선</th>
-                            <th className="py-2 pr-3">거래처</th>
-                            <th className="py-2 pr-3">추가운행</th>
-                            <th className="py-2">비고</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {detailDispatches.map((dispatch) => {
-                            const route = routeMap.get(dispatch.routeId);
-                            const client = clientMap.get(dispatch.clientId);
-                            return (
-                              <tr key={dispatch.id} className="border-b border-border/60 align-top">
-                                <td className="py-2 pr-3">{formatDate(dispatch.scheduledDate, 'long')}</td>
-                                <td className="py-2 pr-3">{route?.name ?? '알 수 없는 노선'}</td>
-                                <td className="py-2 pr-3">{client?.name ?? '알 수 없는 거래처'}</td>
-                                <td className="py-2 pr-3">{dispatch.status === 'completed' ? '완료 운행' : '기본 운행'}</td>
-                                <td className="py-2">{dispatch.notes || '—'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                {detailTab === 'summary' ? (
+                  renderPayrollItemsSection(selectedSlip)
+                ) : (
+                  <div className="space-y-4">
+                    <div className="payroll-print-hide">
+                      <input
+                        type="text"
+                        value={dispatchSearchTerm}
+                        onChange={(e) => setDispatchSearchTerm(e.target.value)}
+                        placeholder="운행일자/노선/거래처 검색"
+                        className="w-full max-w-sm rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                      />
                     </div>
-                  )}
-                </div>
+                    {renderDispatchTable(filteredDetailDispatches, 'max-h-[28rem] overflow-y-auto')}
+                  </div>
+                )}
+              </div>
+
+              {/* 프린트 전용: 탭과 관계없이 급여+운행 전체 출력 */}
+              <div className="hidden print:block space-y-4">
+                {renderPayrollItemsSection(selectedSlip)}
+                {renderDispatchTable(detailDispatches, '')}
               </div>
             </div>
 
-            <div className="sticky bottom-0 flex justify-end border-t border-border bg-background px-6 py-4">
+            <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-background px-6 py-4 payroll-print-hide">
               <Button variant="outline" onClick={() => setDetailOpen(false)}>
                 닫기
               </Button>
+              <Button onClick={handlePrintPayrollDetail}>프린트하기</Button>
             </div>
           </div>
         </div>
