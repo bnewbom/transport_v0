@@ -63,12 +63,24 @@ export default function DispatchesPage() {
   };
 
   const updateDispatch = (dispatch: Dispatch, updates: Partial<Dispatch>) => {
-    if (dispatch.status === 'closed') return toast.error('수정 불가', '마감 상태의 배차는 수정할 수 없습니다.');
+    if (dispatch.status === 'closed') {
+      toast.error('수정 불가', '마감 상태의 배차는 수정할 수 없습니다.');
+      return;
+    }
+
     const before = { ...dispatch };
-    const updated = repositories.dispatches.update(dispatch.id, updates);
-    if (updated) {
+    const optimistic = { ...dispatch, ...updates };
+
+    setRows((prev) => prev.map((row) => (row.id === dispatch.id ? optimistic : row)));
+
+    try {
+      const updated = repositories.dispatches.update(dispatch.id, updates);
+      if (!updated) throw new Error('update failed');
       recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'update', before, after: updated });
-      load();
+      toast.success('배차 정보가 즉시 반영되었습니다.');
+    } catch {
+      setRows((prev) => prev.map((row) => (row.id === dispatch.id ? before : row)));
+      toast.error('배차 수정 실패', '변경 내용을 저장하지 못했습니다.');
     }
   };
 
