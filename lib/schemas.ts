@@ -102,7 +102,7 @@ export const PayrollSchema = z.object({
 
 export const ChangeLogSchema = z.object({
   id: z.string(),
-  entityType: z.enum(['dispatch', 'run', 'payroll']),
+  entityType: z.enum(['dispatch', 'run', 'payroll', 'driver']),
   entityId: z.string(),
   action: z.enum(['create', 'update', 'confirm', 'cancel']),
   before: z.unknown().optional(),

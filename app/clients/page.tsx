@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent } from '@/components/layout-shell';
+import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { ModalForm } from '@/components/crud/modal-form';
 import { FormField } from '@/components/crud/form-field';
@@ -10,32 +10,83 @@ import { navItems } from '@/lib/navigation';
 import { t } from '@/lib/i18n';
 import { repositories } from '@/lib/repository';
 import { Client } from '@/lib/schemas';
+import { ensureSeedData } from '@/lib/seed';
+import { getStatusLabel } from '@/lib/labels';
 
 export default function ClientsPage() {
   const [rows, setRows] = React.useState<Client[]>([]);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Client | null>(null);
+  const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'active' | 'inactive'>('all');
   const [form, setForm] = React.useState({ name: '', phone: '', address: '', status: 'active' as Client['status'] });
-  const load = () => setRows(repositories.clients.getAll());
-  React.useEffect(() => load(), []);
+
+  const load = React.useCallback(() => setRows(repositories.clients.getAll()), []);
+
+  React.useEffect(() => {
+    ensureSeedData();
+    load();
+  }, [load]);
 
   const save = () => {
     if (editing) repositories.clients.update(editing.id, form);
     else repositories.clients.create({ ...form, createdAt: new Date().toISOString() });
-    setOpen(false); setEditing(null); load();
+    setOpen(false);
+    setEditing(null);
+    load();
   };
 
-  return <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.clients')} />}>
-    <PageContent>
-      <div className='mb-4'><Button onClick={() => { setEditing(null); setForm({ name: '', phone: '', address: '', status: 'active' }); setOpen(true); }}>+ 거래처 추가</Button></div>
-      <DataList data={rows} columns={[
-        { key: 'name', label: '거래처명' }, { key: 'phone', label: '연락처' }, { key: 'status', label: '상태', render: (v) => <Badge>{String(v)}</Badge> },
-      ]} actions={(r) => <div className='flex gap-2'><Button size='sm' variant='outline' onClick={() => { setEditing(r); setForm({ name: r.name, phone: r.phone, address: r.address, status: r.status }); setOpen(true); }}>수정</Button><Button size='sm' variant='outline' onClick={() => { repositories.clients.update(r.id, { status: 'inactive' }); load(); }}>비활성화</Button></div>} />
-      <ModalForm isOpen={open} onOpenChange={setOpen} onSubmit={save} title={editing ? '거래처 수정' : '거래처 추가'}>
-        <FormField label='거래처명'><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className='w-full rounded border px-3 py-2' /></FormField>
-        <FormField label='연락처'><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className='w-full rounded border px-3 py-2' /></FormField>
-        <FormField label='주소'><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className='w-full rounded border px-3 py-2' /></FormField>
-      </ModalForm>
-    </PageContent>
-  </SidebarLayout>;
+  const filtered = rows.filter((row) => {
+    const q = search.toLowerCase();
+    const bySearch = row.name.toLowerCase().includes(q) || row.phone.includes(search);
+    const byStatus = statusFilter === 'all' || row.status === statusFilter;
+    return bySearch && byStatus;
+  });
+
+  return (
+    <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.clients')} />}>
+      <PageContent>
+        <Grid columns={3} className="mb-4">
+          <StatCard label="전체 거래처" value={rows.length} />
+          <StatCard label="활성" value={rows.filter((x) => x.status === 'active').length} />
+          <StatCard label="비활성" value={rows.filter((x) => x.status === 'inactive').length} />
+        </Grid>
+
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="거래처명/전화번호 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체 상태</option>
+              <option value="active">활성</option>
+              <option value="inactive">비활성</option>
+            </select>
+          </div>
+          <Button onClick={() => { setEditing(null); setForm({ name: '', phone: '', address: '', status: 'active' }); setOpen(true); }}>+ 거래처 추가</Button>
+        </div>
+
+        <DataList
+          data={filtered}
+          columns={[
+            { key: 'name', label: '거래처명' },
+            { key: 'phone', label: '연락처' },
+            { key: 'address', label: '주소' },
+            { key: 'status', label: '상태', render: (v) => <Badge>{getStatusLabel(String(v))}</Badge> },
+          ]}
+          actions={(row) => (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
+              <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
+            </div>
+          )}
+        />
+
+        <ModalForm isOpen={open} onOpenChange={setOpen} onSubmit={save} title={editing ? '거래처 수정' : '거래처 추가'} submitLabel={editing ? '수정' : '추가'}>
+          <FormField label="거래처명" required><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="연락처" required><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="주소" required><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Client['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">활성</option><option value="inactive">비활성</option></select></FormField>
+        </ModalForm>
+      </PageContent>
+    </SidebarLayout>
+  );
 }
