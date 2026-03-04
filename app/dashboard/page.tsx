@@ -3,24 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { dataService, initializeMockData } from '@/lib/data-service';
 import { formatKRW, formatDateTime, getStatusColor, getStatusLabel } from '@/lib/formatters';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -62,16 +53,16 @@ export default function DashboardPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Dashboard"
+          title={t('nav.dashboard')}
           rightContent={
             <button
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -81,24 +72,24 @@ export default function DashboardPage() {
         {/* KPI Stats */}
         <Grid columns={4} gap="md" className="mb-12">
           <StatCard
-            label="Total Income"
+            label={t('pages.dashboard.totalIncome')}
             value={formatKRW(stats.totalIncome)}
             icon="💵"
             trend={{ value: 12.5, isPositive: true }}
           />
           <StatCard
-            label="Total Expense"
+            label={t('pages.dashboard.totalExpense')}
             value={formatKRW(stats.totalExpense)}
             icon="💸"
             trend={{ value: -3.2, isPositive: false }}
           />
           <StatCard
-            label="Active Dispatches"
-            value={stats.activeDispatches}
+            label={t('pages.dashboard.active배차')}
+            value={stats.active배차}
             icon="📦"
           />
           <StatCard
-            label="Completed Today"
+            label={t('pages.dashboard.completedToday')}
             value={stats.completedToday}
             icon="✅"
           />
@@ -106,39 +97,39 @@ export default function DashboardPage() {
 
         {/* Navigation Cards */}
         <div className="mb-12">
-          <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Quick Access</h3>
+          <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">빠른 메뉴</h3>
           <Grid columns={4} gap="md" className="md:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/clients"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">👥</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Clients</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage clients</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">거래처</h4>
+              <p className="mt-1 text-sm text-muted-foreground">거래처 관리</p>
             </Link>
             <Link
               href="/drivers"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">🚗</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Drivers</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage drivers</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">기사</h4>
+              <p className="mt-1 text-sm text-muted-foreground">기사 관리</p>
             </Link>
             <Link
               href="/routes"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">🗺</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Routes</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage routes</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">노선</h4>
+              <p className="mt-1 text-sm text-muted-foreground">노선 관리</p>
             </Link>
             <Link
               href="/dispatches"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
               <div className="mb-3 text-4xl">📋</div>
-              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">Dispatches</h4>
-              <p className="mt-1 text-sm text-muted-foreground">Manage dispatches</p>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">배차</h4>
+              <p className="mt-1 text-sm text-muted-foreground">배차 관리</p>
             </Link>
           </Grid>
         </div>
@@ -146,9 +137,9 @@ export default function DashboardPage() {
         {/* Recent Activities */}
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-foreground">최근 활동</h2>
             <Link href="#" className="text-sm font-medium text-primary hover:underline">
-              View All
+              전체 보기
             </Link>
           </div>
 

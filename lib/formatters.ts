@@ -51,15 +51,15 @@ export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     'active': '활성',
     'inactive': '비활성',
-    'on-leave': '휴가 중',
-    'pending': '대기 중',
-    'confirmed': '확정됨',
+    'on-leave': '휴무',
+    'pending': '대기',
+    'confirmed': '확정',
     'in-progress': '진행 중',
     'completed': '완료',
-    'cancelled': '취소됨',
-    'draft': '작성 중',
-    'approved': '승인됨',
-    'paid': '지급됨',
+    'cancelled': '취소',
+    'draft': '임시',
+    'approved': '승인',
+    'paid': '지급',
   };
   return labels[status] || status;
 }
