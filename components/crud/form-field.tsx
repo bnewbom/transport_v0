@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { t } from '@/lib/i18n';
 
 interface FormFieldProps {
   label: string;
@@ -21,7 +22,7 @@ export function FormField({
     <div className="space-y-1">
       <label className="block text-sm font-medium text-foreground">
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && <span className="ml-1 text-destructive">* ({t('common.required')})</span>}
       </label>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
