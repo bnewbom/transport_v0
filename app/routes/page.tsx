@@ -1,5 +1,4 @@
 'use client';
-
 import React from 'react';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, StatCard } from '@/components/layout-shell';
