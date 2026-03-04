@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent, Grid, StatCard } from '@/components/layout-shell';
+import { PageContent, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { repositories } from '@/lib/repository';
-import { formatDate, formatDateTime, getStatusLabel } from '@/lib/formatters';
+import { formatDate, getStatusLabel } from '@/lib/formatters';
 import { Dispatch } from '@/lib/schemas';
 import { ModalForm } from '@/components/crud/modal-form';
 import { ConfirmDeleteDialog } from '@/components/crud/confirm-delete-dialog';
@@ -14,18 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function DispatchesPage() {
   const router = useRouter();
@@ -45,7 +36,7 @@ export default function DispatchesPage() {
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
 
-  // Delete state
+  // 삭제 state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingDispatch, setDeletingDispatch] = React.useState<Dispatch | null>(null);
 
@@ -69,10 +60,10 @@ export default function DispatchesPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.routeId.trim()) errors.routeId = 'Route is required';
-    if (!formData.driverId.trim()) errors.driverId = 'Driver is required';
-    if (!formData.scheduledDate) errors.scheduledDate = 'Date is required';
-    if (!formData.scheduledTime) errors.scheduledTime = 'Time is required';
+    if (!formData.routeId.trim()) errors.routeId = t('common.required');
+    if (!formData.driverId.trim()) errors.driverId = t('common.required');
+    if (!formData.scheduledDate) errors.scheduledDate = t('common.required');
+    if (!formData.scheduledTime) errors.scheduledTime = t('common.required');
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -110,18 +101,18 @@ export default function DispatchesPage() {
           ...formData,
           scheduledDate: new Date(formData.scheduledDate),
         });
-        toast.success('Dispatch updated', 'Changes have been saved successfully');
+        toast.success('배차 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.dispatches.create({
           ...formData,
           scheduledDate: new Date(formData.scheduledDate),
         } as Omit<Dispatch, 'id' | 'changeLogs'>);
-        toast.success('Dispatch created', 'New dispatch has been scheduled');
+        toast.success('배차 등록 완료', '새 배차가 등록되었습니다');
       }
       loadDispatches();
       setIsModalOpen(false);
-    } catch (error) {
-      toast.error('Failed to save dispatch', 'Please try again');
+    } catch {
+      toast.error('배차 저장 실패', t('common.retry'));
     }
   };
 
@@ -134,12 +125,12 @@ export default function DispatchesPage() {
     if (!deletingDispatch) return;
     try {
       repositories.dispatches.delete(deletingDispatch.id);
-      toast.success('Dispatch deleted', 'The dispatch has been removed');
+      toast.success('배차 삭제 완료', '배차가 삭제되었습니다');
       loadDispatches();
       setDeleteDialogOpen(false);
       setDeletingDispatch(null);
-    } catch (error) {
-      toast.error('Failed to delete dispatch', 'Please try again');
+    } catch {
+      toast.error('배차 삭제 실패', t('common.retry'));
     }
   };
 
@@ -178,16 +169,16 @@ export default function DispatchesPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Dispatches"
+          title={t('nav.dispatches')}
           rightContent={
             <button
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -195,20 +186,20 @@ export default function DispatchesPage() {
     >
       <PageContent>
         {/* Stats */}
-        <Grid columns={5} gap="md" className="mb-8">
-          <StatCard label="Total" value={stats.total} icon="📦" />
-          <StatCard label="Completed" value={stats.completed} icon="✅" />
-          <StatCard label="In Progress" value={stats.inProgress} icon="🔄" />
-          <StatCard label="Pending" value={stats.pending} icon="⏱" />
-          <StatCard label="Cancelled" value={stats.cancelled} icon="❌" />
-        </Grid>
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <StatCard label="전체" value={stats.total} icon="📦" />
+          <StatCard label="완료" value={stats.completed} icon="✅" />
+          <StatCard label="진행 중" value={stats.inProgress} icon="🔄" />
+          <StatCard label="대기" value={stats.pending} icon="⏱" />
+          <StatCard label="취소" value={stats.cancelled} icon="❌" />
+        </div>
 
         {/* Filter & Actions */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search dispatches..."
+              placeholder="배차 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
@@ -218,19 +209,19 @@ export default function DispatchesPage() {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">전체 상태</option>
+              <option value="pending">대기</option>
+              <option value="confirmed">확정</option>
+              <option value="in-progress">진행 중</option>
+              <option value="completed">완료</option>
+              <option value="cancelled">취소</option>
             </select>
           </div>
           <Button
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + New Dispatch
+            + 배차 추가
           </Button>
         </div>
 
@@ -241,32 +232,32 @@ export default function DispatchesPage() {
           columns={[
             {
               key: 'id',
-              label: 'ID',
+              label: '번호',
               render: (value) => <span className="font-mono text-sm">{value}</span>,
             },
             {
               key: 'routeId',
-              label: 'Route',
+              label: '노선',
               render: (value) => <span className="text-sm font-medium">{value}</span>,
             },
             {
               key: 'driverId',
-              label: 'Driver',
+              label: '기사',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'scheduledDate',
-              label: 'Date',
+              label: '날짜',
               render: (value) => <span className="text-sm">{formatDate(value)}</span>,
             },
             {
               key: 'scheduledTime',
-              label: 'Time',
+              label: '시간',
               render: (value) => <span className="text-sm font-medium">{value}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={getStatusBadgeVariant(value)}>
                   {getStatusLabel(value)}
@@ -281,30 +272,30 @@ export default function DispatchesPage() {
                 variant="outline"
                 onClick={() => handleOpenForm(dispatch)}
               >
-                Edit
+                수정
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleDeleteClick(dispatch)}
               >
-                Delete
+                삭제
               </Button>
             </div>
           )}
         />
       </PageContent>
 
-      {/* Create/Edit Form Modal */}
+      {/* Create/수정 Form Modal */}
       <ModalForm
         isOpen={isModalOpen}
-        title={editingDispatch ? 'Edit Dispatch' : 'Create New Dispatch'}
+        title={editingDispatch ? '배차 수정' : '배차 추가'}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSaveDispatch}
-        submitLabel={editingDispatch ? 'Update' : 'Schedule'}
+        submitLabel={editingDispatch ? '수정' : '배차 등록'}
       >
         <FormField
-          label="Route"
+          label="노선"
           error={formErrors.routeId}
           required
         >
@@ -313,12 +304,12 @@ export default function DispatchesPage() {
             value={formData.routeId}
             onChange={(e) => setFormData({...formData, routeId: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter route ID"
+            placeholder="노선 ID를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Driver"
+          label="기사"
           error={formErrors.driverId}
           required
         >
@@ -327,12 +318,12 @@ export default function DispatchesPage() {
             value={formData.driverId}
             onChange={(e) => setFormData({...formData, driverId: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter driver ID"
+            placeholder="기사 ID를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Scheduled Date"
+          label="배차일"
           error={formErrors.scheduledDate}
           required
         >
@@ -345,7 +336,7 @@ export default function DispatchesPage() {
         </FormField>
 
         <FormField
-          label="Scheduled Time"
+          label="배차 시간"
           error={formErrors.scheduledTime}
           required
         >
@@ -357,26 +348,26 @@ export default function DispatchesPage() {
           />
         </FormField>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as any})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="pending">대기</option>
+            <option value="confirmed">확정</option>
+            <option value="in-progress">진행 중</option>
+            <option value="completed">완료</option>
+            <option value="cancelled">취소</option>
           </select>
         </FormField>
       </ModalForm>
 
-      {/* Delete Confirmation Dialog */}
+      {/* 삭제 Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Dispatch"
+        entityName="배차"
         displayValue={deletingDispatch?.id || ''}
         onConfirm={handleConfirmDelete}
       />

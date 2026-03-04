@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -14,18 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function PayrollPage() {
   const router = useRouter();
@@ -71,9 +62,9 @@ export default function PayrollPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.driverId.trim()) errors.driverId = 'Driver is required';
-    if (!formData.period.trim()) errors.period = 'Period is required';
-    if (formData.baseAmount <= 0) errors.baseAmount = 'Base amount must be greater than 0';
+    if (!formData.driverId.trim()) errors.driverId = t('common.required');
+    if (!formData.period.trim()) errors.period = t('common.required');
+    if (formData.baseAmount <= 0) errors.baseAmount = '기본 급여는 0보다 커야 합니다';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -115,18 +106,18 @@ export default function PayrollPage() {
           ...formData,
           totalAmount,
         });
-        toast.success('Payroll updated', 'Changes have been saved successfully');
+        toast.success('급여 정산 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.payrollSlips.create({
           ...formData,
           totalAmount,
         } as Omit<PayrollSlip, 'id'>);
-        toast.success('Payroll created', 'New payroll slip has been generated');
+        toast.success('급여 정산 생성 완료', '새 급여 정산이 생성되었습니다');
       }
       loadSlips();
       setIsModalOpen(false);
     } catch (error) {
-      toast.error('Failed to save payroll', 'Please try again');
+      toast.error('급여 정산 저장 실패', t('common.retry'));
     }
   };
 
@@ -139,12 +130,12 @@ export default function PayrollPage() {
     if (!deletingSlip) return;
     try {
       repositories.payrollSlips.delete(deletingSlip.id);
-      toast.success('Payroll deleted', 'The payroll slip has been removed');
+      toast.success('급여 정산 삭제 완료', '급여 정산이 삭제되었습니다');
       loadSlips();
       setDeleteDialogOpen(false);
       setDeletingSlip(null);
     } catch (error) {
-      toast.error('Failed to delete payroll', 'Please try again');
+      toast.error('급여 정산 삭제 실패', t('common.retry'));
     }
   };
 
@@ -184,16 +175,16 @@ export default function PayrollPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Payroll"
+          title={t('nav.payroll')}
           rightContent={
             <button
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -202,10 +193,10 @@ export default function PayrollPage() {
       <PageContent>
         {/* Stats */}
         <Grid columns={4} gap="md" className="mb-8">
-          <StatCard label="Total Slips" value={stats.total} icon="📄" />
-          <StatCard label="Pending Payment" value={formatKRW(stats.totalPayable)} icon="⏱" />
-          <StatCard label="Approved" value={stats.approved} icon="✅" />
-          <StatCard label="Paid" value={stats.paid} icon="💳" />
+          <StatCard label="전체 정산" value={stats.total} icon="📄" />
+          <StatCard label="지급 예정" value={formatKRW(stats.totalPayable)} icon="⏱" />
+          <StatCard label="승인" value={stats.approved} icon="✅" />
+          <StatCard label="지급" value={stats.paid} icon="💳" />
         </Grid>
 
         {/* Filter & Actions */}
@@ -213,7 +204,7 @@ export default function PayrollPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search payroll..."
+              placeholder="급여 정산 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
@@ -223,17 +214,17 @@ export default function PayrollPage() {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="approved">Approved</option>
-              <option value="paid">Paid</option>
+              <option value="all">전체 상태</option>
+              <option value="draft">임시</option>
+              <option value="approved">승인</option>
+              <option value="paid">지급</option>
             </select>
             <select
               value={periodFilter}
               onChange={(e) => setPeriodFilter(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Periods</option>
+              <option value="all">전체 기간</option>
               {periods.map(period => (
                 <option key={period} value={period}>{period}</option>
               ))}
@@ -243,7 +234,7 @@ export default function PayrollPage() {
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Generate Payroll
+            + 급여 정산 생성
           </Button>
         </div>
 
@@ -254,7 +245,7 @@ export default function PayrollPage() {
           columns={[
             {
               key: 'driverId',
-              label: 'Driver',
+              label: '기사',
               render: (value) => <span className="font-medium">{value}</span>,
             },
             {
@@ -264,12 +255,12 @@ export default function PayrollPage() {
             },
             {
               key: 'baseAmount',
-              label: 'Base',
+              label: '기본급',
               render: (value) => <span className="text-sm">{formatKRW(value as number)}</span>,
             },
             {
               key: 'bonusAmount',
-              label: 'Bonus',
+              label: '보너스',
               render: (value, item) => (
                 <span className="text-sm text-green-600 dark:text-green-400">
                   {value && (value as number) > 0 ? '+' + formatKRW(value as number) : '—'}
@@ -278,7 +269,7 @@ export default function PayrollPage() {
             },
             {
               key: 'deductionAmount',
-              label: 'Deduction',
+              label: '공제',
               render: (value) => (
                 <span className="text-sm text-red-600 dark:text-red-400">
                   {value && (value as number) > 0 ? '-' + formatKRW(value as number) : '—'}
@@ -287,12 +278,12 @@ export default function PayrollPage() {
             },
             {
               key: 'totalAmount',
-              label: 'Total',
+              label: '합계',
               render: (value) => <span className="font-medium">{formatKRW(value as number)}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={getStatusBadgeVariant(value)}>
                   {getStatusLabel(value)}
@@ -324,13 +315,13 @@ export default function PayrollPage() {
       {/* Create/Edit Form Modal */}
       <ModalForm
         isOpen={isModalOpen}
-        title={editingSlip ? 'Edit Payroll' : 'Generate New Payroll'}
+        title={editingSlip ? '급여 정산 수정' : '급여 정산 생성'}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSaveSlip}
-        submitLabel={editingSlip ? 'Update' : 'Generate'}
+        submitLabel={editingSlip ? '수정' : '생성'}
       >
         <FormField
-          label="Driver"
+          label="기사"
           error={formErrors.driverId}
           required
         >
@@ -339,12 +330,12 @@ export default function PayrollPage() {
             value={formData.driverId}
             onChange={(e) => setFormData({...formData, driverId: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter driver ID or name"
+            placeholder="기사 ID 또는 이름"
           />
         </FormField>
 
         <FormField
-          label="Period"
+          label="정산 기간"
           error={formErrors.period}
           required
           help="Format: YYYY-MM"
@@ -358,7 +349,7 @@ export default function PayrollPage() {
         </FormField>
 
         <FormField
-          label="Base Amount (KRW)"
+          label="기본 금액(원)"
           error={formErrors.baseAmount}
           required
         >
@@ -368,13 +359,13 @@ export default function PayrollPage() {
             value={formData.baseAmount}
             onChange={(e) => setFormData({...formData, baseAmount: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter base amount"
+            placeholder="기본 금액을 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Bonus Amount (KRW)"
-          help="Optional"
+          label="보너스(원)"
+          help="선택 사항"
         >
           <input
             type="number"
@@ -382,13 +373,13 @@ export default function PayrollPage() {
             value={formData.bonusAmount}
             onChange={(e) => setFormData({...formData, bonusAmount: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter bonus amount"
+            placeholder="보너스를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Deduction Amount (KRW)"
-          help="Optional"
+          label="공제 금액(원)"
+          help="선택 사항"
         >
           <input
             type="number"
@@ -396,27 +387,27 @@ export default function PayrollPage() {
             value={formData.deductionAmount}
             onChange={(e) => setFormData({...formData, deductionAmount: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter deduction amount"
+            placeholder="공제 금액을 입력하세요"
           />
         </FormField>
 
         <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">
+            합계: <span className="font-semibold text-foreground">
               {formatKRW(formData.baseAmount + formData.bonusAmount - formData.deductionAmount)}
             </span>
           </p>
         </div>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as any})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="draft">Draft</option>
-            <option value="approved">Approved</option>
-            <option value="paid">Paid</option>
+            <option value="draft">임시</option>
+            <option value="approved">승인</option>
+            <option value="paid">지급</option>
           </select>
         </FormField>
       </ModalForm>
@@ -425,7 +416,7 @@ export default function PayrollPage() {
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Payroll"
+        entityName="급여 정산"
         displayValue={deletingSlip ? `${deletingSlip.driverId} - ${deletingSlip.period}` : ''}
         onConfirm={handleConfirmDelete}
       />

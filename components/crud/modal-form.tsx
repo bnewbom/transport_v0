@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { t } from '@/lib/i18n';
 
 interface ModalFormProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export function ModalForm({
   onSubmit,
   isLoading = false,
   children,
-  submitLabel = 'Save',
+  submitLabel = t('common.save'),
 }: ModalFormProps) {
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -71,13 +72,13 @@ export function ModalForm({
             onClick={() => onOpenChange(false)}
             disabled={submitting || isLoading}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={submitting || isLoading}
           >
-            {submitting || isLoading ? 'Saving...' : submitLabel}
+            {submitting || isLoading ? `${t('common.save')}...` : submitLabel}
           </Button>
         </div>
       </div>

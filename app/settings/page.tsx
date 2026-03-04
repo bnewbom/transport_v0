@@ -2,21 +2,12 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent } from '@/components/layout-shell';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -35,16 +26,16 @@ export default function SettingsPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Settings"
+          title={t('nav.settings')}
           rightContent={
             <button
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -52,20 +43,20 @@ export default function SettingsPage() {
     >
       <PageContent>
         <div className="max-w-2xl space-y-6">
-          {/* General Settings */}
+          {/* 일반 설정 */}
           <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">General Settings</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">일반 설정</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground">Company Name</label>
+                <label className="block text-sm font-medium text-foreground">회사명</label>
                 <input
                   type="text"
-                  defaultValue="Transport Hub"
+                  defaultValue="운송 허브"
                   className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground">Email</label>
+                <label className="block text-sm font-medium text-foreground">이메일</label>
                 <input
                   type="email"
                   defaultValue="admin@transport.com"
@@ -73,50 +64,50 @@ export default function SettingsPage() {
                 />
               </div>
               <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                Save Changes
+                변경사항 저장
               </button>
             </div>
           </div>
 
           {/* Notification Settings */}
           <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">Notifications</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">알림</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Email Notifications</label>
+                <label className="text-sm font-medium text-foreground">이메일 알림</label>
                 <input type="checkbox" defaultChecked className="h-4 w-4" />
               </div>
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Dispatch Alerts</label>
+                <label className="text-sm font-medium text-foreground">배차 알림</label>
                 <input type="checkbox" defaultChecked className="h-4 w-4" />
               </div>
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Payroll Notifications</label>
+                <label className="text-sm font-medium text-foreground">급여 알림</label>
                 <input type="checkbox" defaultChecked className="h-4 w-4" />
               </div>
             </div>
           </div>
 
-          {/* API Settings */}
+          {/* API 설정 */}
           <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">API Settings</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">API 설정</h2>
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">API keys for third-party integrations</p>
+              <p className="text-sm text-muted-foreground">외부 연동을 위한 API 키입니다</p>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="font-mono text-xs">API Key: sk_live_••••••••••••••••</p>
               </div>
               <button className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Regenerate Key
+                키 재발급
               </button>
             </div>
           </div>
 
-          {/* Danger Zone */}
+          {/* 위험 구역 */}
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-destructive">Danger Zone</h2>
-            <p className="mb-4 text-sm text-muted-foreground">Irreversible actions</p>
+            <h2 className="mb-4 text-lg font-semibold text-destructive">위험 구역</h2>
+            <p className="mb-4 text-sm text-muted-foreground">되돌릴 수 없는 작업입니다</p>
             <button className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/20">
-              Clear All Data
+              전체 데이터 삭제
             </button>
           </div>
         </div>

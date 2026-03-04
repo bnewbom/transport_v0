@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
+import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -14,18 +16,7 @@ import { FormField } from '@/components/crud/form-field';
 import { useAppToast } from '@/components/crud/toast';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'Drivers', href: '/drivers', icon: '🚗' },
-  { label: 'Routes', href: '/routes', icon: '🗺' },
-  { label: 'Dispatches', href: '/dispatches', icon: '📋' },
-  { label: 'Operations', href: '/operations', icon: '⚙️' },
-  { label: 'Finance', href: '/finance', icon: '💰' },
-  { label: 'Payroll', href: '/payroll', icon: '💳' },
-  { label: 'Reports', href: '/reports', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+
 
 export default function RoutesPage() {
   const router = useRouter();
@@ -47,7 +38,7 @@ export default function RoutesPage() {
   });
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
 
-  // Delete state
+  // 삭제 state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingRoute, setDeletingRoute] = React.useState<Route | null>(null);
 
@@ -71,12 +62,12 @@ export default function RoutesPage() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.name.trim()) errors.name = 'Route name is required';
-    if (!formData.startLocation.trim()) errors.startLocation = 'Start location is required';
-    if (!formData.endLocation.trim()) errors.endLocation = 'End location is required';
-    if (formData.distance <= 0) errors.distance = 'Distance must be greater than 0';
-    if (formData.estimatedTime <= 0) errors.estimatedTime = 'Estimated time must be greater than 0';
-    if (formData.baseRate <= 0) errors.baseRate = 'Base rate must be greater than 0';
+    if (!formData.name.trim()) errors.name = '노선명은 필수 입력입니다';
+    if (!formData.startLocation.trim()) errors.startLocation = '출발지는 필수 입력입니다';
+    if (!formData.endLocation.trim()) errors.endLocation = '도착지는 필수 입력입니다';
+    if (formData.distance <= 0) errors.distance = '거리는 0보다 커야 합니다';
+    if (formData.estimatedTime <= 0) errors.estimatedTime = '예상 시간은 0보다 커야 합니다';
+    if (formData.baseRate <= 0) errors.baseRate = '기본 요금은 0보다 커야 합니다';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -115,15 +106,15 @@ export default function RoutesPage() {
     try {
       if (editingRoute) {
         repositories.routes.update(editingRoute.id, formData);
-        toast.success('Route updated', 'Changes have been saved successfully');
+        toast.success('노선 수정 완료', '변경사항이 저장되었습니다');
       } else {
         repositories.routes.create(formData as Omit<Route, 'id'>);
-        toast.success('Route created', 'New route has been added');
+        toast.success('노선 등록 완료', '새 노선이 추가되었습니다');
       }
       loadRoutes();
       setIsDrawerOpen(false);
     } catch (error) {
-      toast.error('Failed to save route', 'Please try again');
+      toast.error('노선 저장 실패', t('common.retry'));
     }
   };
 
@@ -136,12 +127,12 @@ export default function RoutesPage() {
     if (!deletingRoute) return;
     try {
       repositories.routes.delete(deletingRoute.id);
-      toast.success('Route deleted', 'The route has been removed');
+      toast.success('노선 삭제 완료', '노선이 삭제되었습니다');
       loadRoutes();
       setDeleteDialogOpen(false);
       setDeletingRoute(null);
     } catch (error) {
-      toast.error('Failed to delete route', 'Please try again');
+      toast.error('노선 삭제 실패', t('common.retry'));
     }
   };
 
@@ -165,16 +156,16 @@ export default function RoutesPage() {
 
   return (
     <SidebarLayout
-      sidebar={<Sidebar items={navItems} title="Transport Hub" />}
+      sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title="Routes"
+          title={t('nav.routes')}
           rightContent={
             <button
               onClick={handleLogout}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Logout
+              로그아웃
             </button>
           }
         />
@@ -183,10 +174,10 @@ export default function RoutesPage() {
       <PageContent>
         {/* Stats */}
         <Grid columns={4} gap="md" className="mb-8">
-          <StatCard label="Total Routes" value={routes.length} icon="🗺" />
-          <StatCard label="Active Routes" value={activeCount} icon="✅" />
-          <StatCard label="Total Distance" value={`${totalDistance} km`} icon="📏" />
-          <StatCard label="Avg Base Rate" value={formatKRW(avgRate)} icon="💰" />
+          <StatCard label="전체 노선" value={routes.length} icon="🗺" />
+          <StatCard label="활성 노선" value={activeCount} icon="✅" />
+          <StatCard label="총 거리" value={`${totalDistance} km`} icon="📏" />
+          <StatCard label="평균 기본요금" value={formatKRW(avgRate)} icon="💰" />
         </Grid>
 
         {/* Filter & Actions */}
@@ -194,7 +185,7 @@ export default function RoutesPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search routes..."
+              placeholder="노선 검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
@@ -204,16 +195,16 @@ export default function RoutesPage() {
               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="all">전체 상태</option>
+              <option value="active">활성</option>
+              <option value="inactive">비활성</option>
             </select>
           </div>
           <Button
             onClick={() => handleOpenForm()}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            + Add Route
+            + 노선 추가
           </Button>
         </div>
 
@@ -224,32 +215,32 @@ export default function RoutesPage() {
           columns={[
             {
               key: 'name',
-              label: 'Route Name',
+              label: '노선명',
               render: (value) => <span className="font-medium">{value}</span>,
             },
             {
               key: 'startLocation',
-              label: 'Start',
+              label: '출발지',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'endLocation',
-              label: 'End',
+              label: '도착지',
               render: (value) => <span className="text-sm">{value}</span>,
             },
             {
               key: 'distance',
-              label: 'Distance',
+              label: '거리',
               render: (value) => <span className="font-medium">{value} km</span>,
             },
             {
               key: 'baseRate',
-              label: 'Base Rate',
+              label: '기본 요금',
               render: (value) => <span className="font-medium">{formatKRW(value as number)}</span>,
             },
             {
               key: 'status',
-              label: 'Status',
+              label: '상태',
               render: (value) => (
                 <Badge variant={value === 'active' ? 'default' : 'secondary'}>
                   {getStatusLabel(value)}
@@ -264,30 +255,30 @@ export default function RoutesPage() {
                 variant="outline"
                 onClick={() => handleOpenForm(route)}
               >
-                Edit
+                수정
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleDeleteClick(route)}
               >
-                Delete
+                삭제
               </Button>
             </div>
           )}
         />
       </PageContent>
 
-      {/* Create/Edit Form Modal */}
+      {/* Create/수정 Form Modal */}
       <ModalForm
         isOpen={isDrawerOpen}
-        title={editingRoute ? 'Edit Route' : 'Add New Route'}
+        title={editingRoute ? '노선 수정' : '노선 추가'}
         onOpenChange={setIsDrawerOpen}
         onSubmit={handleSaveRoute}
-        submitLabel={editingRoute ? 'Update' : 'Create'}
+        submitLabel={editingRoute ? '수정' : '추가'}
       >
         <FormField
-          label="Route Name"
+          label="노선명"
           error={formErrors.name}
           required
         >
@@ -296,12 +287,12 @@ export default function RoutesPage() {
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="e.g., Seoul-Incheon Express"
+            placeholder="예: 서울-인천 고속"
           />
         </FormField>
 
         <FormField
-          label="Start Location"
+          label="출발지"
           error={formErrors.startLocation}
           required
         >
@@ -310,12 +301,12 @@ export default function RoutesPage() {
             value={formData.startLocation}
             onChange={(e) => setFormData({...formData, startLocation: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter start location"
+            placeholder="출발지를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="End Location"
+          label="도착지"
           error={formErrors.endLocation}
           required
         >
@@ -324,12 +315,12 @@ export default function RoutesPage() {
             value={formData.endLocation}
             onChange={(e) => setFormData({...formData, endLocation: e.target.value})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter end location"
+            placeholder="도착지를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Distance (km)"
+          label="거리(km)"
           error={formErrors.distance}
           required
         >
@@ -339,12 +330,12 @@ export default function RoutesPage() {
             value={formData.distance}
             onChange={(e) => setFormData({...formData, distance: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter distance"
+            placeholder="거리를 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Estimated Time (minutes)"
+          label="예상 소요시간(분)"
           error={formErrors.estimatedTime}
           required
         >
@@ -354,12 +345,12 @@ export default function RoutesPage() {
             value={formData.estimatedTime}
             onChange={(e) => setFormData({...formData, estimatedTime: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter estimated time"
+            placeholder="예상 시간을 입력하세요"
           />
         </FormField>
 
         <FormField
-          label="Base Rate (KRW)"
+          label="기본요금(원)"
           error={formErrors.baseRate}
           required
         >
@@ -369,27 +360,27 @@ export default function RoutesPage() {
             value={formData.baseRate}
             onChange={(e) => setFormData({...formData, baseRate: parseInt(e.target.value) || 0})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter base rate"
+            placeholder="기본요금을 입력하세요"
           />
         </FormField>
 
-        <FormField label="Status" required>
+        <FormField label="상태" required>
           <select
             value={formData.status}
             onChange={(e) => setFormData({...formData, status: e.target.value as 'active' | 'inactive'})}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
           </select>
         </FormField>
       </ModalForm>
 
-      {/* Delete Confirmation Dialog */}
+      {/* 삭제 Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        entityName="Route"
+        entityName="노선"
         displayValue={deletingRoute?.name || ''}
         onConfirm={handleConfirmDelete}
       />
