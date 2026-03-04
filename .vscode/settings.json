@@ -1,0 +1,9 @@
+{
+    "terminal.integrated.profiles.windows": {
+    "Git Bash": {
+        "path": "C:\\Users\\최보미\\AppData\\Local\\Programs\\Git\\usr\\bin\\bash.exe",
+        "args": ["--login", "-i"]
+    }
+    },
+    "terminal.integrated.defaultProfile.windows": "Git Bash"
+}
