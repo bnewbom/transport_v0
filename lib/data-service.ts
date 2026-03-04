@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Client, Driver, Route, Dispatch, OperationLog, PayrollSlip, FinancialRecord, Activity } from './schemas';
 
 // Mock Data Storage

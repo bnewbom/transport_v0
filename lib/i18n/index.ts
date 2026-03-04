@@ -1,6 +1,6 @@
 import { ko, type TranslationDictionary } from './ko';
 
-type AnyRecord = Record<string, string | AnyRecord>;
+type AnyRecord = { [key: string]: string | AnyRecord };
 
 function getValueByPath(dict: AnyRecord, key: string): string | undefined {
   return key.split('.').reduce<string | AnyRecord | undefined>((acc, segment) => {
