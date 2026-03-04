@@ -26,7 +26,7 @@ export default function RoutesPage() {
 
   // Form state
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [editingRoute, setEditingRoute] = React.useState<Route | null>(null);
+  const [editingRoute, set수정ingRoute] = React.useState<Route | null>(null);
   const [formData, setFormData] = React.useState({
     name: '',
     startLocation: '',
@@ -74,7 +74,7 @@ export default function RoutesPage() {
 
   const handleOpenForm = (route?: Route) => {
     if (route) {
-      setEditingRoute(route);
+      set수정ingRoute(route);
       setFormData({
         name: route.name,
         startLocation: route.startLocation,
@@ -85,7 +85,7 @@ export default function RoutesPage() {
         status: route.status,
       });
     } else {
-      setEditingRoute(null);
+      set수정ingRoute(null);
       setFormData({
         name: '',
         startLocation: '',
