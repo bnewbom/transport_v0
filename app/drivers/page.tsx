@@ -46,6 +46,7 @@ export default function DriversPage() {
   const [editing, setEditing] = React.useState<Driver | null>(null);
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | Driver['status']>('all');
+  const [savingRouteByKey, setSavingRouteByKey] = React.useState<Record<string, boolean>>({});
   const [form, setForm] = React.useState<DriverFormState>(buildFormState(null));
 
   const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
@@ -88,6 +89,27 @@ export default function DriversPage() {
     load();
   };
 
+  const handleInlineRouteChange = (driver: Driver, routeIndex: number, routeId: string) => {
+    const routeKey = `${driver.id}-${routeIndex}`;
+    setSavingRouteByKey((prev) => ({ ...prev, [routeKey]: true }));
+    try {
+      const currentRouteIds = driver.routeIds?.length ? [...driver.routeIds] : [driver.defaultRouteId ?? ''];
+      while (currentRouteIds.length <= routeIndex) currentRouteIds.push('');
+      currentRouteIds[routeIndex] = routeId;
+      const normalizedRouteIds = Array.from(new Set(currentRouteIds.map((id) => id.trim()).filter(Boolean)));
+      repositories.drivers.update(driver.id, {
+        routeIds: normalizedRouteIds.length ? normalizedRouteIds : undefined,
+        defaultRouteId: normalizedRouteIds[0] || undefined,
+      });
+      load();
+      toast.success('노선이 바로 반영되었습니다.');
+    } catch {
+      toast.error('노선 수정 실패', '잠시 후 다시 시도해주세요.');
+    } finally {
+      setSavingRouteByKey((prev) => ({ ...prev, [routeKey]: false }));
+    }
+  };
+
   const filtered = rows.filter((row) => {
     const q = search.toLowerCase();
     const bySearch = row.name.toLowerCase().includes(q) || row.phone.includes(search);
@@ -127,22 +149,31 @@ export default function DriversPage() {
             {
               key: 'defaultRouteId',
               label: '노선',
-              render: (_, row) => (
+              render: (_, row) => {
+                const rowRouteIds = row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : [''];
+                return (
                 <div className="space-y-2">
-                  {(row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : ['']).map((routeId, idx) => (
+                  {rowRouteIds.map((routeId, idx) => {
+                    const selectedByOthers = new Set(rowRouteIds.filter((_, i) => i !== idx).filter(Boolean));
+                    const selectableRoutes = allRoutes.filter((route) => !selectedByOthers.has(route.id));
+                    const routeKey = `${row.id}-${idx}`;
+                    return (
                     <div key={`${row.id}-${routeId || 'empty'}-${idx}`}>
                       <select
                         value={routeId}
-                        disabled
-                        className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-100"
+                        onChange={(e) => handleInlineRouteChange(row, idx, e.target.value)}
+                        disabled={Boolean(savingRouteByKey[routeKey])}
+                        className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-70"
                       >
                         <option value="">미지정</option>
-                        {allRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
+                        {selectableRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
                       </select>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              ),
+                );
+              },
             },
             { key: 'status', label: '상태', render: (v) => <Badge>{getDriverStatusLabel(v)}</Badge> },
           ]}
