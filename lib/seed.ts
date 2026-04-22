@@ -12,12 +12,12 @@ export function ensureSeedData() {
   if (seeded) return;
 
   const routes = [
-    { id: 'route-seed-1', name: '서울-인천 주간', startLocation: '서울', endLocation: '인천', distance: 38, estimatedTime: 70, baseRate: 80000, status: 'active' as const, weekdayMask: 62, shiftType: 'day' as const, baseAllowanceAmount: 80000 },
-    { id: 'route-seed-2', name: '서울-수원 주간', startLocation: '서울', endLocation: '수원', distance: 32, estimatedTime: 60, baseRate: 76000, status: 'active' as const, weekdayMask: 62, shiftType: 'day' as const, baseAllowanceAmount: 76000 },
-    { id: 'route-seed-3', name: '서울-천안 야간', startLocation: '서울', endLocation: '천안', distance: 95, estimatedTime: 120, baseRate: 120000, status: 'active' as const, weekdayMask: 124, shiftType: 'night' as const, baseAllowanceAmount: 120000 },
-    { id: 'route-seed-4', name: '인천-평택 야간', startLocation: '인천', endLocation: '평택', distance: 84, estimatedTime: 110, baseRate: 115000, status: 'active' as const, weekdayMask: 31, shiftType: 'night' as const, baseAllowanceAmount: 115000 },
-    { id: 'route-seed-5', name: '서울-용인 주간', startLocation: '서울', endLocation: '용인', distance: 44, estimatedTime: 80, baseRate: 88000, status: 'active' as const, weekdayMask: 127, shiftType: 'day' as const, baseAllowanceAmount: 88000 },
-    { id: 'route-seed-6', name: '서울-대전 주간', startLocation: '서울', endLocation: '대전', distance: 150, estimatedTime: 150, baseRate: 160000, status: 'inactive' as const, weekdayMask: 62, shiftType: 'day' as const, baseAllowanceAmount: 160000 },
+    { id: 'route-seed-1', name: '서울-인천-오전-출근', startLocation: '서울', endLocation: '인천', distance: 38, estimatedTime: 70, baseRate: 80000, status: 'active' as const, weekdayMask: 62, shiftType: 'day' as const, timeSlot: 'am' as const, commuteType: 'goWork' as const, baseAllowanceAmount: 80000 },
+    { id: 'route-seed-2', name: '서울-수원-오후-퇴근', startLocation: '서울', endLocation: '수원', distance: 32, estimatedTime: 60, baseRate: 76000, status: 'active' as const, weekdayMask: 62, shiftType: 'day' as const, timeSlot: 'pm' as const, commuteType: 'offWork' as const, baseAllowanceAmount: 76000 },
+    { id: 'route-seed-3', name: '서울-천안-오전-출근', startLocation: '서울', endLocation: '천안', distance: 95, estimatedTime: 120, baseRate: 120000, status: 'active' as const, weekdayMask: 124, shiftType: 'night' as const, timeSlot: 'am' as const, commuteType: 'goWork' as const, baseAllowanceAmount: 120000 },
+    { id: 'route-seed-4', name: '인천-평택-오후-퇴근', startLocation: '인천', endLocation: '평택', distance: 84, estimatedTime: 110, baseRate: 115000, status: 'active' as const, weekdayMask: 31, shiftType: 'night' as const, timeSlot: 'pm' as const, commuteType: 'offWork' as const, baseAllowanceAmount: 115000 },
+    { id: 'route-seed-5', name: '서울-용인-오전-출근', startLocation: '서울', endLocation: '용인', distance: 44, estimatedTime: 80, baseRate: 88000, status: 'active' as const, weekdayMask: 127, shiftType: 'day' as const, timeSlot: 'am' as const, commuteType: 'goWork' as const, baseAllowanceAmount: 88000 },
+    { id: 'route-seed-6', name: '서울-대전-오후-퇴근', startLocation: '서울', endLocation: '대전', distance: 150, estimatedTime: 150, baseRate: 160000, status: 'inactive' as const, weekdayMask: 62, shiftType: 'day' as const, timeSlot: 'pm' as const, commuteType: 'offWork' as const, baseAllowanceAmount: 160000 },
   ];
 
   const clients = [
