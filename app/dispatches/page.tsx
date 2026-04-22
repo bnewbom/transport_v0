@@ -18,6 +18,7 @@ import { dayToBit } from '@/lib/labels';
 import { ensureSeedData } from '@/lib/seed';
 
 export default function DispatchesPage() {
+  const visibleDriverNames = React.useMemo(() => ['김민준', '이성호', '박지원'], []);
   const router = useRouter();
   const toast = useAppToast();
   const [serviceDate, setServiceDate] = React.useState(new Date().toISOString().slice(0, 10));
@@ -61,7 +62,7 @@ export default function DispatchesPage() {
     }
 
     for (const route of targets) {
-      const driver = repositories.drivers.getAll().find((d) => d.status === 'active' && d.defaultRouteId === route.id);
+      const driver = repositories.drivers.getAll().find((d) => d.status === 'active' && visibleDriverNames.includes(d.name) && d.defaultRouteId === route.id);
       const dispatch = repositories.dispatches.create({
         routeId: route.id,
         plannedDriverId: driver?.id ?? null,
@@ -194,7 +195,7 @@ export default function DispatchesPage() {
     }
   };
 
-  const drivers = repositories.drivers.getAll().filter((d) => d.status === 'active');
+  const drivers = repositories.drivers.getAll().filter((d) => d.status === 'active' && visibleDriverNames.includes(d.name));
   const filteredDispatches = rows.filter((d) => {
     const date = String(d.serviceDate ?? d.scheduledDate).slice(0, 10);
     const routeName = repositories.routes.getById(d.routeId)?.name ?? '';
