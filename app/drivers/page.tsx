@@ -15,6 +15,7 @@ import { getDriverStatusLabel } from '@/lib/labels';
 import { useAppToast } from '@/components/crud/toast';
 
 export default function DriversPage() {
+  const allowedDriverNames = React.useMemo(() => ['김민준', '이성호', '박지원'], []);
   type DriverFormState = {
     name: string;
     phone: string;
@@ -48,9 +49,24 @@ export default function DriversPage() {
   const [form, setForm] = React.useState<DriverFormState>(buildFormState(null));
 
   const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
-  const routeNameById = React.useMemo(() => Object.fromEntries(allRoutes.map((route) => [route.id, route.name])), [allRoutes]);
   const activeRoutes = React.useMemo(() => repositories.routes.getAll().filter((r) => r.status === 'active'), [rows]);
-  const load = React.useCallback(() => setRows(repositories.drivers.getAll()), []);
+  const load = React.useCallback(() => {
+    const routeIds = repositories.routes.getAll().map((route) => route.id);
+    const driverTemplates = [
+      { name: '김민준', phone: '010-3000-0001', licenseNumber: 'LIC-KMJ-1001', defaultRouteId: routeIds[0] },
+      { name: '이성호', phone: '010-3000-0002', licenseNumber: 'LIC-LSH-1002', defaultRouteId: routeIds[1] ?? routeIds[0] },
+      { name: '박지원', phone: '010-3000-0003', licenseNumber: 'LIC-PJW-1003', defaultRouteId: routeIds[2] ?? routeIds[0] },
+    ];
+
+    driverTemplates.forEach((template) => {
+      const exists = repositories.drivers.getAll().some((driver) => driver.name === template.name);
+      if (!exists) {
+        repositories.drivers.create({ ...template, status: 'active', joinDate: new Date().toISOString() });
+      }
+    });
+
+    setRows(repositories.drivers.getAll().filter((driver) => allowedDriverNames.includes(driver.name)));
+  }, [allowedDriverNames]);
 
   React.useEffect(() => {
     ensureSeedData();
@@ -112,11 +128,18 @@ export default function DriversPage() {
               key: 'defaultRouteId',
               label: '노선',
               render: (_, row) => (
-                <div className="flex max-w-80 flex-wrap gap-1">
-                  {(row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : []).map((routeId) => (
-                    <Badge key={`${row.id}-${routeId}`}>{routeNameById[routeId] ?? routeId}</Badge>
+                <div className="space-y-1">
+                  {(row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : ['']).map((routeId, idx) => (
+                    <select
+                      key={`${row.id}-${routeId || 'empty'}-${idx}`}
+                      value={routeId}
+                      disabled
+                      className="w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-100"
+                    >
+                      <option value="">미지정</option>
+                      {allRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
+                    </select>
                   ))}
-                  {!row.routeIds?.length && !row.defaultRouteId ? <Badge>미지정</Badge> : null}
                 </div>
               ),
             },
