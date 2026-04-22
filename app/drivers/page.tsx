@@ -128,17 +128,18 @@ export default function DriversPage() {
               key: 'defaultRouteId',
               label: '노선',
               render: (_, row) => (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {(row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : ['']).map((routeId, idx) => (
-                    <select
-                      key={`${row.id}-${routeId || 'empty'}-${idx}`}
-                      value={routeId}
-                      disabled
-                      className="w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-100"
-                    >
-                      <option value="">미지정</option>
-                      {allRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
-                    </select>
+                    <div key={`${row.id}-${routeId || 'empty'}-${idx}`}>
+                      <select
+                        value={routeId}
+                        disabled
+                        className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-100"
+                      >
+                        <option value="">미지정</option>
+                        {allRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
+                      </select>
+                    </div>
                   ))}
                 </div>
               ),
