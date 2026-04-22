@@ -22,7 +22,7 @@ class UserRepository extends BaseRepository<User> {}
 class ClientRepository extends SoftRepository<Client> {}
 class DriverRepository extends SoftRepository<Driver> {}
 class RouteRepository extends SoftRepository<Route> {}
-class DispatchRepository extends SoftRepository<Dispatch> {}
+class DispatchRepository extends BaseRepository<Dispatch> {}
 class RunRepository extends BaseRepository<Run> {}
 class PayrollRepository extends BaseRepository<Payroll> {}
 class PayrollItemRepository extends BaseRepository<PayrollItem> {}
