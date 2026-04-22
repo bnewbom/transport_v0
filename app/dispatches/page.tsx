@@ -6,6 +6,8 @@ import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
 import { Button } from '@/components/ui/button';
+import { ModalForm } from '@/components/crud/modal-form';
+import { FormField } from '@/components/crud/form-field';
 import { navItems } from '@/lib/navigation';
 import { t } from '@/lib/i18n';
 import { repositories, recordChangeLog } from '@/lib/repository';
@@ -23,6 +25,7 @@ export default function DispatchesPage() {
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'draft' | 'published' | 'closed' | 'canceled'>('all');
   const [rows, setRows] = React.useState<Dispatch[]>([]);
   const [runs, setRuns] = React.useState<Run[]>([]);
+  const [manualOpen, setManualOpen] = React.useState(false);
   const [manualRouteId, setManualRouteId] = React.useState('');
   const [manualDriverId, setManualDriverId] = React.useState('');
 
@@ -105,6 +108,7 @@ export default function DispatchesPage() {
     recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'create', after: dispatch });
     setManualRouteId('');
     setManualDriverId('');
+    setManualOpen(false);
     load();
     toast.success('수동 배차 생성', '배차가 추가되었습니다.');
   };
@@ -214,29 +218,28 @@ export default function DispatchesPage() {
           <StatCard label="당일 운행" value={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate).length} />
         </Grid>
 
-        <div className="mb-4 flex gap-2">
-          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input px-3 py-2 text-sm" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input px-3 py-2 text-sm" />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input px-3 py-2 text-sm">
-            <option value="all">전체 상태</option>
-            <option value="draft">임시저장</option>
-            <option value="published">게시</option>
-            <option value="closed">마감</option>
-            <option value="canceled">취소</option>
-          </select>
-          {hasDispatchesForDate ? <Button onClick={confirmAllDispatches}>모두 운행 확정</Button> : <Button onClick={autoGenerate}>자동 생성</Button>}
-        </div>
-
-        <div className="mb-4 flex flex-wrap gap-2">
-          <select value={manualRouteId} onChange={(e) => setManualRouteId(e.target.value)} className="rounded-lg border border-input px-3 py-2 text-sm">
-            <option value="">수동 생성 노선 선택</option>
-            {activeRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
-          </select>
-          <select value={manualDriverId} onChange={(e) => setManualDriverId(e.target.value)} className="rounded-lg border border-input px-3 py-2 text-sm">
-            <option value="">수동 생성 기사 선택(선택)</option>
-            {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
-          </select>
-          <Button onClick={createManualDispatch}>수동 생성</Button>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체 상태</option>
+              <option value="draft">임시저장</option>
+              <option value="published">게시</option>
+              <option value="closed">마감</option>
+              <option value="canceled">취소</option>
+            </select>
+            {hasDispatchesForDate ? <Button onClick={confirmAllDispatches}>모두 운행 확정</Button> : <Button onClick={autoGenerate}>자동 생성</Button>}
+          </div>
+          <Button
+            onClick={() => {
+              setManualRouteId('');
+              setManualDriverId('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
         </div>
 
         <DataList
@@ -267,6 +270,21 @@ export default function DispatchesPage() {
             { key: 'confirmedAt', label: '확정', render: (_, r) => <Badge>{r.confirmedAt ? '확정됨' : getRunStatusLabel(r.status)}</Badge> },
           ]}
         />
+
+        <ModalForm isOpen={manualOpen} onOpenChange={setManualOpen} onSubmit={createManualDispatch} title="수동 배차 추가" submitLabel="추가">
+          <FormField label="노선" required>
+            <select value={manualRouteId} onChange={(e) => setManualRouteId(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
+              <option value="">노선을 선택하세요</option>
+              {activeRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
+            </select>
+          </FormField>
+          <FormField label="기사">
+            <select value={manualDriverId} onChange={(e) => setManualDriverId(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
+              <option value="">미배정</option>
+              {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
+            </select>
+          </FormField>
+        </ModalForm>
       </PageContent>
     </SidebarLayout>
   );
