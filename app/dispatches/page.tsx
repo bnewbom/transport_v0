@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
-import { DataList, Badge } from '@/components/data-list';
+import { DataList } from '@/components/data-list';
 import { Button } from '@/components/ui/button';
 import { ModalForm } from '@/components/crud/modal-form';
 import { FormField } from '@/components/crud/form-field';
@@ -14,7 +14,7 @@ import { repositories, recordChangeLog } from '@/lib/repository';
 import { Dispatch, Run } from '@/lib/schemas';
 import { formatDate, formatKRW } from '@/lib/formatters';
 import { useAppToast } from '@/components/crud/toast';
-import { dayToBit, getRunStatusLabel } from '@/lib/labels';
+import { dayToBit } from '@/lib/labels';
 import { ensureSeedData } from '@/lib/seed';
 
 export default function DispatchesPage() {
@@ -264,10 +264,9 @@ export default function DispatchesPage() {
           data={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate)}
           columns={[
             { key: 'serviceDate', label: '운행일', render: (v) => formatDate(new Date(String(v)), 'long') },
-            { key: 'driverId', label: '귀속 기사', render: (_, r) => <select value={r.driverId ?? ''} onChange={(e) => changeRun(r, { driverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
+            { key: 'driverId', label: '운행 기사', render: (_, r) => <select value={r.driverId ?? ''} onChange={(e) => changeRun(r, { driverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
             { key: 'status', label: '상태', render: (_, r) => <select value={r.status} onChange={(e) => changeRun(r, { status: e.target.value as Run['status'] })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="completed">완료</option><option value="absence">결근</option><option value="holiday">휴무</option><option value="canceled">취소</option></select> },
             { key: 'allowanceAmount', label: '수당', render: (v) => formatKRW(Number(v)) },
-            { key: 'confirmedAt', label: '확정', render: (_, r) => <Badge>{r.confirmedAt ? '확정됨' : getRunStatusLabel(r.status)}</Badge> },
           ]}
         />
 
