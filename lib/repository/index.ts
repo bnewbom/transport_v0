@@ -38,7 +38,7 @@ export const repositories = {
     { id: 'driver-1', name: '김기사', phone: '010-2222-2222', licenseNumber: 'A123', status: 'active', joinDate: now() },
   ]),
   routes: new RouteRepository('routes', [
-    { id: 'route-1', name: '서울-인천', startLocation: '서울', endLocation: '인천', distance: 35, estimatedTime: 70, baseRate: 80000, status: 'active', weekdayMask: 62, shiftType: 'day', baseAllowanceAmount: 80000, effectiveFrom: now().slice(0, 10) },
+    { id: 'route-1', name: '서울-인천:[주간/출근]', startLocation: '서울', endLocation: '인천', distance: 35, estimatedTime: 70, baseRate: 80000, status: 'active', weekdayMask: 62, shiftType: 'day', commuteType: 'goWork', baseAllowanceAmount: 80000, effectiveFrom: now().slice(0, 10) },
   ]),
   dispatches: new DispatchRepository('dispatches', []),
   runs: new RunRepository('runs', []),
