@@ -32,6 +32,7 @@ export const DriverSchema = z.object({
   bankAccount: z.string().optional(),
   accountHolder: z.string().optional(),
   defaultRouteId: z.string().optional(),
+  routeIds: z.array(z.string()).optional(),
   resignedAt: z.any().optional(),
   basicSalaryOverride: z.number().optional(),
 });
