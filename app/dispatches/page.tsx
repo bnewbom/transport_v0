@@ -38,9 +38,22 @@ export default function DispatchesPage() {
   const isMonthLocked = (date: string) => repositories.payroll.getAll().some((p) => p.settlementMonth === date.slice(0, 7) && p.status === 'confirmed');
 
   const autoGenerate = () => {
+    const existingDispatches = repositories.dispatches
+      .getAll()
+      .filter((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate);
+
+    if (existingDispatches.length > 0) {
+      toast.error('자동 배차 불가', '해당 운행일에는 이미 배차가 생성되어 자동 배차는 1회만 가능합니다.');
+      return;
+    }
+
     const bit = dayToBit(new Date(serviceDate).getDay());
-    let targets = repositories.routes.getAll().filter((r) => r.status === 'active' && (r.weekdayMask & bit) !== 0);
-    if (targets.length === 0) targets = repositories.routes.getAll().filter((r) => r.status === 'active').slice(0, 1);
+    const targets = repositories.routes.getAll().filter((r) => r.status === 'active' && (r.weekdayMask & bit) !== 0);
+
+    if (targets.length === 0) {
+      toast.error('자동 배차 대상 없음', '선택한 운행일에 운행하는 활성 노선이 없습니다.');
+      return;
+    }
 
     for (const route of targets) {
       const driver = repositories.drivers.getAll().find((d) => d.status === 'active' && d.defaultRouteId === route.id);
@@ -144,7 +157,12 @@ export default function DispatchesPage() {
             <option value="closed">마감</option>
             <option value="canceled">취소</option>
           </select>
-          <Button onClick={autoGenerate}>자동 생성</Button>
+          <Button
+            onClick={autoGenerate}
+            disabled={rows.some((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate)}
+          >
+            자동 생성
+          </Button>
         </div>
 
         <DataList
