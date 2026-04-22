@@ -8,7 +8,7 @@ import { FormField } from '@/components/crud/form-field';
 import { Button } from '@/components/ui/button';
 import { navItems } from '@/lib/navigation';
 import { t } from '@/lib/i18n';
-import { repositories, recordChangeLog } from '@/lib/repository';
+import { repositories } from '@/lib/repository';
 import { Driver } from '@/lib/schemas';
 import { ensureSeedData } from '@/lib/seed';
 import { getDriverStatusLabel } from '@/lib/labels';
@@ -45,9 +45,10 @@ export default function DriversPage() {
   const [editing, setEditing] = React.useState<Driver | null>(null);
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | Driver['status']>('all');
-  const [savingRouteById, setSavingRouteById] = React.useState<Record<string, boolean>>({});
   const [form, setForm] = React.useState<DriverFormState>(buildFormState(null));
 
+  const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
+  const routeNameById = React.useMemo(() => Object.fromEntries(allRoutes.map((route) => [route.id, route.name])), [allRoutes]);
   const activeRoutes = React.useMemo(() => repositories.routes.getAll().filter((r) => r.status === 'active'), [rows]);
   const load = React.useCallback(() => setRows(repositories.drivers.getAll()), []);
 
@@ -69,22 +70,6 @@ export default function DriversPage() {
     else repositories.drivers.create({ ...payload, joinDate: new Date().toISOString() });
     setOpen(false);
     load();
-  };
-
-  const handleInlineDefaultRoute = async (driver: Driver, routeId: string) => {
-    const before = { ...driver };
-    setSavingRouteById((prev) => ({ ...prev, [driver.id]: true }));
-    try {
-      const updated = repositories.drivers.update(driver.id, { defaultRouteId: routeId || undefined });
-      if (!updated) throw new Error('update failed');
-      recordChangeLog({ entityType: 'driver', entityId: driver.id, action: 'update', before, after: updated });
-      toast.success('기본 노선 변경 완료');
-      load();
-    } catch {
-      toast.error('기본 노선 변경 실패', '잠시 후 다시 시도해주세요.');
-    } finally {
-      setSavingRouteById((prev) => ({ ...prev, [driver.id]: false }));
-    }
   };
 
   const filtered = rows.filter((row) => {
@@ -125,17 +110,14 @@ export default function DriversPage() {
             { key: 'phone', label: '연락처' },
             {
               key: 'defaultRouteId',
-              label: '기본노선',
+              label: '노선',
               render: (_, row) => (
-                <select
-                  value={row.defaultRouteId ?? ''}
-                  onChange={(e) => handleInlineDefaultRoute(row, e.target.value)}
-                  disabled={Boolean(savingRouteById[row.id])}
-                  className="w-44 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-60"
-                >
-                  <option value="">미지정</option>
-                  {activeRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
-                </select>
+                <div className="flex max-w-80 flex-wrap gap-1">
+                  {(row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : []).map((routeId) => (
+                    <Badge key={`${row.id}-${routeId}`}>{routeNameById[routeId] ?? routeId}</Badge>
+                  ))}
+                  {!row.routeIds?.length && !row.defaultRouteId ? <Badge>미지정</Badge> : null}
+                </div>
               ),
             },
             { key: 'status', label: '상태', render: (v) => <Badge>{getDriverStatusLabel(v)}</Badge> },
