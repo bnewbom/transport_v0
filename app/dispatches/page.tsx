@@ -31,8 +31,8 @@ export default function DispatchesPage() {
   const [manualDriverId, setManualDriverId] = React.useState('');
 
   const load = React.useCallback(() => {
-    setRows(repositories.dispatches.getAll());
-    setRuns(repositories.runs.getAll());
+    setRows([...repositories.dispatches.getAll()]);
+    setRuns([...repositories.runs.getAll()]);
   }, []);
 
   React.useEffect(() => {
