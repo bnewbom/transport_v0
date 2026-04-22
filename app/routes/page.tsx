@@ -17,14 +17,12 @@ import { ensureSeedData } from '@/lib/seed';
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 type RouteForm = {
-  name: string;
   startLocation: string;
   endLocation: string;
   distance: number;
   estimatedTime: number;
   baseRate: number;
   shiftType: Route['shiftType'];
-  timeSlot: Route['timeSlot'];
   commuteType: Route['commuteType'];
   baseAllowanceAmount: number;
   weekdayMask: number;
@@ -32,26 +30,34 @@ type RouteForm = {
 };
 
 const createRouteFormDefaults = (): RouteForm => ({
-  name: '',
   startLocation: '',
   endLocation: '',
   distance: 0,
   estimatedTime: 0,
   baseRate: 0,
   shiftType: 'day',
-  timeSlot: 'am',
   commuteType: 'goWork',
   baseAllowanceAmount: 0,
   weekdayMask: 127,
   status: 'active',
 });
 
-const getTimeSlotLabel = (timeSlot: Route['timeSlot']) => (timeSlot === 'am' ? '오전' : '오후');
+const getShiftSlotLabel = (shiftType: Route['shiftType']) => (shiftType === 'day' ? '주간' : '야간');
 const getCommuteTypeLabel = (commuteType: Route['commuteType']) => (commuteType === 'goWork' ? '출근' : '퇴근');
-const buildRouteName = (route: Pick<RouteForm, 'startLocation' | 'endLocation' | 'timeSlot' | 'commuteType'>) =>
-  [route.startLocation.trim(), route.endLocation.trim(), getTimeSlotLabel(route.timeSlot), getCommuteTypeLabel(route.commuteType)]
-    .filter(Boolean)
-    .join('-');
+const buildBaseRouteName = (route: Pick<RouteForm, 'startLocation' | 'endLocation' | 'shiftType' | 'commuteType'>) =>
+  `${route.startLocation.trim()}-${route.endLocation.trim()}:[${getShiftSlotLabel(route.shiftType)}/${getCommuteTypeLabel(route.commuteType)}]`;
+const buildUniqueRouteName = (baseName: string, usedNames: Set<string>) => {
+  if (!usedNames.has(baseName)) return baseName;
+  let suffixIndex = 0;
+  while (suffixIndex < 26) {
+    const candidate = `${baseName}${String.fromCharCode(65 + suffixIndex)}`;
+    if (!usedNames.has(candidate)) return candidate;
+    suffixIndex += 1;
+  }
+  let serial = 27;
+  while (usedNames.has(`${baseName}${serial}`)) serial += 1;
+  return `${baseName}${serial}`;
+};
 
 const normalizeRouteForm = (route?: Partial<Route> | null): RouteForm => {
   const defaults = createRouteFormDefaults();
@@ -59,7 +65,6 @@ const normalizeRouteForm = (route?: Partial<Route> | null): RouteForm => {
     ...defaults,
     ...route,
     shiftType: route?.shiftType ?? defaults.shiftType,
-    timeSlot: route?.timeSlot ?? defaults.timeSlot,
     commuteType: route?.commuteType ?? defaults.commuteType,
     baseAllowanceAmount: Number(route?.baseAllowanceAmount ?? defaults.baseAllowanceAmount),
     weekdayMask: Number(route?.weekdayMask ?? defaults.weekdayMask),
@@ -90,28 +95,30 @@ export default function RoutesPage() {
   const load = React.useCallback(() => {
     const current = repositories.routes.getAll();
     const normalizedRows = current.map((row) => normalizeRouteEntity(row));
+    const usedNames = new Set<string>();
 
     normalizedRows.forEach((row, idx) => {
       const original = current[idx];
+      const uniqueName = buildUniqueRouteName(buildBaseRouteName(row), usedNames);
+      usedNames.add(uniqueName);
       if (
         original.baseAllowanceAmount !== row.baseAllowanceAmount ||
         original.weekdayMask !== row.weekdayMask ||
         original.shiftType !== row.shiftType ||
-        original.timeSlot !== row.timeSlot ||
         original.commuteType !== row.commuteType ||
-        original.name !== buildRouteName(row) ||
+        original.name !== uniqueName ||
         original.status !== row.status
       ) {
         repositories.routes.update(row.id, {
           baseAllowanceAmount: row.baseAllowanceAmount,
           weekdayMask: row.weekdayMask,
           shiftType: row.shiftType,
-          timeSlot: row.timeSlot,
           commuteType: row.commuteType,
-          name: buildRouteName(row),
+          name: uniqueName,
           status: row.status,
         });
       }
+      row.name = uniqueName;
     });
 
     setRows(normalizedRows);
@@ -123,7 +130,12 @@ export default function RoutesPage() {
   }, [load]);
 
   const save = () => {
-    const payload = { ...form, name: buildRouteName(form), weekdayMask: form.weekdayMask };
+    const existingNames = new Set(rows.filter((row) => row.id !== editing?.id).map((row) => row.name));
+    const payload = {
+      ...form,
+      name: buildUniqueRouteName(buildBaseRouteName(form), existingNames),
+      weekdayMask: form.weekdayMask,
+    };
     if (editing) repositories.routes.update(editing.id, payload);
     else repositories.routes.create(payload);
     setOpen(false);
@@ -203,7 +215,6 @@ export default function RoutesPage() {
         />
 
         <ModalForm isOpen={open} onOpenChange={setOpen} onSubmit={save} title={editing ? '노선 수정' : '노선 추가'} submitLabel={editing ? '수정' : '추가'}>
-          <FormField label="노선명" required><input value={buildRouteName(form)} readOnly className="w-full rounded-lg border border-input bg-muted px-3 py-2 text-sm" /></FormField>
           <FormField label="출발지" required><input value={form.startLocation} onChange={(e) => setForm({ ...form, startLocation: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
           <FormField label="도착지" required><input value={form.endLocation} onChange={(e) => setForm({ ...form, endLocation: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
           <FormField label="요일" required>
@@ -214,8 +225,7 @@ export default function RoutesPage() {
               })}
             </div>
           </FormField>
-          <FormField label="주/야간"><select value={form.shiftType} onChange={(e) => setForm({ ...form, shiftType: e.target.value as Route['shiftType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="day">주간</option><option value="night">야간</option></select></FormField>
-          <FormField label="오전/오후" required><select value={form.timeSlot} onChange={(e) => setForm({ ...form, timeSlot: e.target.value as Route['timeSlot'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="am">오전</option><option value="pm">오후</option></select></FormField>
+          <FormField label="주/야간" required><select value={form.shiftType} onChange={(e) => setForm({ ...form, shiftType: e.target.value as Route['shiftType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="day">주간</option><option value="night">야간</option></select></FormField>
           <FormField label="출근/퇴근" required><select value={form.commuteType} onChange={(e) => setForm({ ...form, commuteType: e.target.value as Route['commuteType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="goWork">출근</option><option value="offWork">퇴근</option></select></FormField>
           <FormField label="기본 수당(1회)"><input type="number" value={form.baseAllowanceAmount ?? 0} onChange={(e) => setForm({ ...form, baseAllowanceAmount: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
           <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Route['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">활성</option><option value="inactive">비활성</option></select></FormField>
