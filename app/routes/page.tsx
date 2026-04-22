@@ -23,7 +23,6 @@ type RouteForm = {
   estimatedTime: number;
   baseRate: number;
   shiftType: Route['shiftType'];
-  timeSlot: Route['timeSlot'];
   commuteType: Route['commuteType'];
   baseAllowanceAmount: number;
   weekdayMask: number;
@@ -37,17 +36,16 @@ const createRouteFormDefaults = (): RouteForm => ({
   estimatedTime: 0,
   baseRate: 0,
   shiftType: 'day',
-  timeSlot: 'am',
   commuteType: 'goWork',
   baseAllowanceAmount: 0,
   weekdayMask: 127,
   status: 'active',
 });
 
-const getTimeSlotLabel = (timeSlot: Route['timeSlot']) => (timeSlot === 'am' ? '오전' : '오후');
+const getShiftSlotLabel = (shiftType: Route['shiftType']) => (shiftType === 'day' ? '주간' : '야간');
 const getCommuteTypeLabel = (commuteType: Route['commuteType']) => (commuteType === 'goWork' ? '출근' : '퇴근');
-const buildBaseRouteName = (route: Pick<RouteForm, 'startLocation' | 'endLocation' | 'timeSlot' | 'commuteType'>) =>
-  `${route.startLocation.trim()}-${route.endLocation.trim()}:[${getTimeSlotLabel(route.timeSlot)}/${getCommuteTypeLabel(route.commuteType)}]`;
+const buildBaseRouteName = (route: Pick<RouteForm, 'startLocation' | 'endLocation' | 'shiftType' | 'commuteType'>) =>
+  `${route.startLocation.trim()}-${route.endLocation.trim()}:[${getShiftSlotLabel(route.shiftType)}/${getCommuteTypeLabel(route.commuteType)}]`;
 const buildUniqueRouteName = (baseName: string, usedNames: Set<string>) => {
   if (!usedNames.has(baseName)) return baseName;
   let suffixIndex = 0;
@@ -67,7 +65,6 @@ const normalizeRouteForm = (route?: Partial<Route> | null): RouteForm => {
     ...defaults,
     ...route,
     shiftType: route?.shiftType ?? defaults.shiftType,
-    timeSlot: route?.timeSlot ?? defaults.timeSlot,
     commuteType: route?.commuteType ?? defaults.commuteType,
     baseAllowanceAmount: Number(route?.baseAllowanceAmount ?? defaults.baseAllowanceAmount),
     weekdayMask: Number(route?.weekdayMask ?? defaults.weekdayMask),
@@ -108,7 +105,6 @@ export default function RoutesPage() {
         original.baseAllowanceAmount !== row.baseAllowanceAmount ||
         original.weekdayMask !== row.weekdayMask ||
         original.shiftType !== row.shiftType ||
-        original.timeSlot !== row.timeSlot ||
         original.commuteType !== row.commuteType ||
         original.name !== uniqueName ||
         original.status !== row.status
@@ -117,7 +113,6 @@ export default function RoutesPage() {
           baseAllowanceAmount: row.baseAllowanceAmount,
           weekdayMask: row.weekdayMask,
           shiftType: row.shiftType,
-          timeSlot: row.timeSlot,
           commuteType: row.commuteType,
           name: uniqueName,
           status: row.status,
@@ -230,8 +225,7 @@ export default function RoutesPage() {
               })}
             </div>
           </FormField>
-          <FormField label="주/야간"><select value={form.shiftType} onChange={(e) => setForm({ ...form, shiftType: e.target.value as Route['shiftType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="day">주간</option><option value="night">야간</option></select></FormField>
-          <FormField label="오전/오후" required><select value={form.timeSlot} onChange={(e) => setForm({ ...form, timeSlot: e.target.value as Route['timeSlot'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="am">오전</option><option value="pm">오후</option></select></FormField>
+          <FormField label="주/야간" required><select value={form.shiftType} onChange={(e) => setForm({ ...form, shiftType: e.target.value as Route['shiftType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="day">주간</option><option value="night">야간</option></select></FormField>
           <FormField label="출근/퇴근" required><select value={form.commuteType} onChange={(e) => setForm({ ...form, commuteType: e.target.value as Route['commuteType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="goWork">출근</option><option value="offWork">퇴근</option></select></FormField>
           <FormField label="기본 수당(1회)"><input type="number" value={form.baseAllowanceAmount ?? 0} onChange={(e) => setForm({ ...form, baseAllowanceAmount: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
           <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Route['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">활성</option><option value="inactive">비활성</option></select></FormField>
