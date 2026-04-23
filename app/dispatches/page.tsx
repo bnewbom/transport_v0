@@ -325,7 +325,7 @@ export default function DispatchesPage() {
               label: '근태',
               render: (_, d) => {
                 const run = runs.find((item) => item.dispatchId === d.id);
-                if (!run) return <Badge variant="secondary">미확정</Badge>;
+                if (!run) return <span className="inline-flex items-center rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">미확정</span>;
                 return (
                   <select value={run.status} onChange={(e) => changeRun(run, { status: e.target.value as Run['status'] })} className="rounded-lg border border-input px-2 py-1 text-sm">
                     <option value="completed">완료</option>
