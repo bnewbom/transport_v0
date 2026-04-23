@@ -19,6 +19,7 @@ interface DataListProps<T extends { id: string }> {
   emptyMessage?: string;
   onRowClick?: (item: T) => void;
   actions?: (item: T) => React.ReactNode;
+  actionsLabel?: string;
   className?: string;
 }
 
@@ -29,6 +30,7 @@ export function DataList<T extends { id: string }>({
   emptyMessage = t('common.noData'),
   onRowClick,
   actions,
+  actionsLabel = t('common.actions'),
   className,
 }: DataListProps<T>) {
   const [isCompact, setIsCompact] = React.useState(false);
@@ -75,7 +77,7 @@ export function DataList<T extends { id: string }>({
                   {col.sortable && <span className="ml-1 text-xs opacity-50">↕</span>}
                 </th>
               ))}
-              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">{t('common.actions')}</th>}
+              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">{actionsLabel}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -118,7 +120,7 @@ export function DataList<T extends { id: string }>({
           )}
         >
           <div className="space-y-2">
-            {columns.slice(0, 3).map((col) => (
+            {columns.map((col) => (
               <div key={String(col.key)} className="flex items-start justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">{col.label}</span>
                 <span className="text-sm font-medium text-foreground">
@@ -126,6 +128,12 @@ export function DataList<T extends { id: string }>({
                 </span>
               </div>
             ))}
+            {actions && (
+              <div className="pt-1">
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">{actionsLabel}</span>
+                <div onClick={(e) => e.stopPropagation()}>{actions(item)}</div>
+              </div>
+            )}
           </div>
         </div>
       ))}
