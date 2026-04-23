@@ -27,8 +27,8 @@ export default function DispatchesPage() {
   const [rows, setRows] = React.useState<Dispatch[]>([]);
   const [runs, setRuns] = React.useState<Run[]>([]);
   const [manualOpen, setManualOpen] = React.useState(false);
-  const [manualRouteId, setManualRouteId] = React.useState('');
-  const [manualDriverId, setManualDriverId] = React.useState('');
+  const [manualRouteName, setManualRouteName] = React.useState('');
+  const [manualDriverName, setManualDriverName] = React.useState('');
 
   const load = React.useCallback(() => {
     setRows([...repositories.dispatches.getAll()]);
@@ -82,18 +82,24 @@ export default function DispatchesPage() {
   };
 
   const createManualDispatch = () => {
-    if (!manualRouteId) {
-      toast.error('수동 생성 실패', '노선을 선택해 주세요.');
+    const routeName = manualRouteName.trim();
+    const driverName = manualDriverName.trim();
+    if (!routeName) {
+      toast.error('수동 생성 실패', '노선을 입력해 주세요.');
       return;
     }
 
-    const route = repositories.routes.getById(manualRouteId);
-    if (!route || route.status !== 'active') {
-      toast.error('수동 생성 실패', '선택한 노선을 찾을 수 없습니다.');
+    const route = repositories.routes.getAll().find((item) => item.status === 'active' && item.name === routeName);
+    if (!route) {
+      toast.error('수동 생성 실패', '입력한 노선을 찾을 수 없습니다.');
       return;
     }
 
-    const driver = manualDriverId ? repositories.drivers.getById(manualDriverId) : null;
+    const driver = driverName ? repositories.drivers.getAll().find((item) => item.status === 'active' && item.name === driverName) : null;
+    if (driverName && !driver) {
+      toast.error('수동 생성 실패', '입력한 기사를 찾을 수 없습니다.');
+      return;
+    }
     const dispatch = repositories.dispatches.create({
       routeId: route.id,
       plannedDriverId: driver?.id ?? null,
@@ -107,8 +113,8 @@ export default function DispatchesPage() {
       createdAt: new Date().toISOString(),
     });
     recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'create', after: dispatch });
-    setManualRouteId('');
-    setManualDriverId('');
+    setManualRouteName('');
+    setManualDriverName('');
     setManualOpen(false);
     load();
     toast.success('수동 배차 생성', '배차가 추가되었습니다.');
@@ -157,32 +163,43 @@ export default function DispatchesPage() {
   };
 
   const confirmAllDispatches = () => {
-    const targets = filteredDispatches.filter((dispatch) => !runs.some((run) => run.dispatchId === dispatch.id));
-    if (targets.length === 0) {
-      toast.error('확정 대상 없음', '이미 모두 운행 확정되었습니다.');
+    if (filteredDispatches.length === 0) {
+      toast.error('대상 없음', '처리할 배차가 없습니다.');
       return;
     }
-    for (const dispatch of targets) {
-      createRun(dispatch);
+    const allConfirmed = filteredDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+    if (allConfirmed) {
+      const ok = window.confirm('모든 운행을 취소합니까?');
+      if (!ok) return;
+      const targets = runs.filter((run) => filteredDispatches.some((dispatch) => dispatch.id === run.dispatchId));
+      for (const run of targets) {
+        const before = { ...run };
+        repositories.runs.delete(run.id);
+        recordChangeLog({ entityType: 'run', entityId: run.id, action: 'cancel', before });
+      }
+      load();
+      toast.success('일괄 운행 취소', `${targets.length}건이 취소되었습니다.`);
+      return;
     }
+
+    const targets = filteredDispatches.filter((dispatch) => !runs.some((run) => run.dispatchId === dispatch.id));
+    for (const dispatch of targets) createRun(dispatch);
     toast.success('일괄 운행 확정', `${targets.length}건이 확정되었습니다.`);
   };
 
-  const deleteDispatch = (dispatch: Dispatch) => {
-    const hasRun = repositories.runs.getAll().some((run) => run.dispatchId === dispatch.id);
-    if (hasRun) {
-      toast.error('삭제 불가', '이미 운행 확정된 배차는 삭제할 수 없습니다.');
+  const toggleRun = (dispatch: Dispatch) => {
+    const run = runs.find((item) => item.dispatchId === dispatch.id);
+    if (!run) {
+      createRun(dispatch);
       return;
     }
-    const before = { ...dispatch };
-    const deleted = repositories.dispatches.delete(dispatch.id);
-    if (!deleted) {
-      toast.error('삭제 실패', '배차를 삭제하지 못했습니다.');
-      return;
-    }
-    recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'cancel', before });
+    const ok = window.confirm('운행을 취소합니까?');
+    if (!ok) return;
+    const before = { ...run };
+    repositories.runs.delete(run.id);
+    recordChangeLog({ entityType: 'run', entityId: run.id, action: 'cancel', before });
     load();
-    toast.success('삭제 완료', '배차가 삭제되었습니다.');
+    toast.success('운행 취소', '운행 확정이 취소되었습니다.');
   };
 
   const changeRun = (run: Run, updates: Partial<Run>) => {
@@ -207,7 +224,7 @@ export default function DispatchesPage() {
     return byDate && byStatus && bySearch;
   });
   const hasDispatchesForDate = rows.some((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate);
-  const activeRoutes = repositories.routes.getAll().filter((route) => route.status === 'active');
+  const allConfirmedForDate = filteredDispatches.length > 0 && filteredDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
 
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.dispatches')} />}>
@@ -230,12 +247,16 @@ export default function DispatchesPage() {
               <option value="closed">마감</option>
               <option value="canceled">취소</option>
             </select>
-            {hasDispatchesForDate ? <Button onClick={confirmAllDispatches}>모두 운행 확정</Button> : <Button onClick={autoGenerate}>자동 생성</Button>}
+            {hasDispatchesForDate ? (
+              <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+            ) : <Button onClick={autoGenerate}>자동 생성</Button>}
           </div>
           <Button
             onClick={() => {
-              setManualRouteId('');
-              setManualDriverId('');
+              setManualRouteName('');
+              setManualDriverName('');
               setManualOpen(true);
             }}
           >
@@ -245,44 +266,59 @@ export default function DispatchesPage() {
 
         <DataList
           data={filteredDispatches}
+          actionsLabel="운행 상태"
           columns={[
             { key: 'routeId', label: '노선', render: (v) => repositories.routes.getById(String(v))?.name ?? '-' },
-            { key: 'plannedDriverId', label: '계획 기사', render: (_, d) => <select value={d.plannedDriverId ?? ''} onChange={(e) => updateDispatch(d, { plannedDriverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
+            { key: 'plannedDriverId', label: '기사', render: (_, d) => <select value={d.plannedDriverId ?? ''} onChange={(e) => updateDispatch(d, { plannedDriverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
             { key: 'serviceDate', label: '운행일', render: (v) => formatDate(new Date(String(v)), 'long') },
+            {
+              key: 'status',
+              label: '근태',
+              render: (_, d) => {
+                const run = runs.find((item) => item.dispatchId === d.id);
+                if (!run) return <Badge variant="secondary">미확정</Badge>;
+                return (
+                  <select value={run.status} onChange={(e) => changeRun(run, { status: e.target.value as Run['status'] })} className="rounded-lg border border-input px-2 py-1 text-sm">
+                    <option value="completed">완료</option>
+                    <option value="absence">결근</option>
+                    <option value="holiday">휴무</option>
+                    <option value="canceled">취소</option>
+                    <option value="replacement">대차</option>
+                  </select>
+                );
+              },
+            },
+            {
+              key: 'routeId',
+              label: '수당',
+              render: (_, d) => {
+                const run = runs.find((item) => item.dispatchId === d.id);
+                const route = repositories.routes.getById(d.routeId);
+                return formatKRW(Number(run?.allowanceAmount ?? route?.baseAllowanceAmount ?? route?.baseRate ?? 0));
+              },
+            },
           ]}
           actions={(d) => (
             <div className="flex items-center gap-2">
-              <Button size="sm" disabled={runs.some((run) => run.dispatchId === d.id)} onClick={() => createRun(d)}>
-                {runs.some((run) => run.dispatchId === d.id) ? '확정됨' : '운행 생성(확정)'}
+              <Button size="sm" variant={runs.some((run) => run.dispatchId === d.id) ? 'destructive' : 'default'} onClick={() => toggleRun(d)}>
+                {runs.some((run) => run.dispatchId === d.id) ? '운행 취소' : '운행 확정'}
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => deleteDispatch(d)}>삭제</Button>
             </div>
           )}
         />
 
-        <h3 className="mb-2 mt-6 font-semibold">운행 목록</h3>
-        <DataList
-          data={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate)}
-          columns={[
-            { key: 'serviceDate', label: '운행일', render: (v) => formatDate(new Date(String(v)), 'long') },
-            { key: 'driverId', label: '운행 기사', render: (_, r) => <select value={r.driverId ?? ''} onChange={(e) => changeRun(r, { driverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
-            { key: 'status', label: '상태', render: (_, r) => <select value={r.status} onChange={(e) => changeRun(r, { status: e.target.value as Run['status'] })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="completed">완료</option><option value="absence">결근</option><option value="holiday">휴무</option><option value="canceled">취소</option></select> },
-            { key: 'allowanceAmount', label: '수당', render: (v) => formatKRW(Number(v)) },
-          ]}
-        />
-
         <ModalForm isOpen={manualOpen} onOpenChange={setManualOpen} onSubmit={createManualDispatch} title="수동 배차 추가" submitLabel="추가">
           <FormField label="노선" required>
-            <select value={manualRouteId} onChange={(e) => setManualRouteId(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
-              <option value="">노선을 선택하세요</option>
-              {activeRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
-            </select>
+            <input value={manualRouteName} onChange={(e) => setManualRouteName(e.target.value)} list="manual-route-list" className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="노선명을 입력하세요" />
+            <datalist id="manual-route-list">
+              {repositories.routes.getAll().filter((route) => route.status === 'active').map((route) => <option key={route.id} value={route.name} />)}
+            </datalist>
           </FormField>
           <FormField label="기사">
-            <select value={manualDriverId} onChange={(e) => setManualDriverId(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
-              <option value="">미배정</option>
-              {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
-            </select>
+            <input value={manualDriverName} onChange={(e) => setManualDriverName(e.target.value)} list="manual-driver-list" className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="기사명을 입력하세요(선택)" />
+            <datalist id="manual-driver-list">
+              {drivers.map((driver) => <option key={driver.id} value={driver.name} />)}
+            </datalist>
           </FormField>
         </ModalForm>
       </PageContent>
