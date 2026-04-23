@@ -19,6 +19,7 @@ export function getStatusLabel(status: string): string {
     completed: '완료',
     absence: '결근',
     holiday: '휴무',
+    replacement: '대차',
     day: '주간',
     night: '야간',
   };

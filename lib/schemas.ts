@@ -76,7 +76,7 @@ export const RunSchema = z.object({
   driverId: z.string().nullable(),
   serviceDate: z.any(),
   allowanceAmount: z.number().nonnegative(),
-  status: z.enum(['completed', 'absence', 'holiday', 'canceled']),
+  status: z.enum(['completed', 'absence', 'holiday', 'canceled', 'replacement']),
   confirmedAt: z.any().optional(),
   confirmedBy: z.string().optional(),
 });
