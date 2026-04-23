@@ -29,6 +29,7 @@ export default function DispatchesPage() {
   const [manualOpen, setManualOpen] = React.useState(false);
   const [manualRouteName, setManualRouteName] = React.useState('');
   const [manualDriverName, setManualDriverName] = React.useState('');
+  const [driverRequiredDispatchIds, setDriverRequiredDispatchIds] = React.useState<string[]>([]);
 
   const load = React.useCallback(() => {
     setRows([...repositories.dispatches.getAll()]);
@@ -145,6 +146,11 @@ export default function DispatchesPage() {
   const createRun = (dispatch: Dispatch) => {
     if (!dispatch.serviceDate) return;
     if (isMonthLocked(String(dispatch.serviceDate))) return toast.error('잠금 월', '확정된 정산월은 운행 생성/수정이 불가합니다.');
+    if (!dispatch.plannedDriverId) {
+      setDriverRequiredDispatchIds((prev) => Array.from(new Set([...prev, dispatch.id])));
+      window.alert('노선에 기사 지정을 해주세요.');
+      return;
+    }
     const alreadyConfirmed = repositories.runs.getAll().some((run) => run.dispatchId === dispatch.id);
     if (alreadyConfirmed) return toast.error('중복 확정 불가', '해당 배차는 이미 운행 확정되었습니다.');
     const route = repositories.routes.getById(dispatch.routeId);
@@ -183,6 +189,12 @@ export default function DispatchesPage() {
     }
 
     const targets = filteredDispatches.filter((dispatch) => !runs.some((run) => run.dispatchId === dispatch.id));
+    const missingDriverTargets = targets.filter((dispatch) => !dispatch.plannedDriverId);
+    if (missingDriverTargets.length > 0) {
+      setDriverRequiredDispatchIds((prev) => Array.from(new Set([...prev, ...missingDriverTargets.map((dispatch) => dispatch.id)])));
+      window.alert('노선에 기사 지정을 해주세요.');
+      return;
+    }
     for (const dispatch of targets) createRun(dispatch);
     toast.success('일괄 운행 확정', `${targets.length}건이 확정되었습니다.`);
   };
@@ -225,6 +237,24 @@ export default function DispatchesPage() {
   });
   const hasDispatchesForDate = rows.some((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate);
   const allConfirmedForDate = filteredDispatches.length > 0 && filteredDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+  const copyDispatchSummary = async () => {
+    const confirmedDispatches = filteredDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+    if (confirmedDispatches.length === 0) return toast.error('복사 실패', '확정된 배차가 없습니다.');
+    const text = confirmedDispatches
+      .map((dispatch, index) => {
+        const routeName = repositories.routes.getById(dispatch.routeId)?.name ?? '-';
+        const driverName = repositories.drivers.getById(dispatch.plannedDriverId ?? '')?.name ?? '미지정';
+        return `${index + 1}. ${routeName} - ${driverName}`;
+      })
+      .join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('복사 완료', '확정 배차표를 복사했습니다.');
+    } catch {
+      toast.error('복사 실패', '클립보드 복사에 실패했습니다.');
+    }
+  };
 
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.dispatches')} />}>
@@ -248,9 +278,12 @@ export default function DispatchesPage() {
               <option value="canceled">취소</option>
             </select>
             {hasDispatchesForDate ? (
-              <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
-                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                  {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+                </Button>
+                <Button variant="outline" disabled={!allConfirmedForDate} onClick={copyDispatchSummary}>배차표 복사</Button>
+              </div>
             ) : <Button onClick={autoGenerate}>자동 생성</Button>}
           </div>
           <Button
@@ -269,7 +302,23 @@ export default function DispatchesPage() {
           actionsLabel="운행 상태"
           columns={[
             { key: 'routeId', label: '노선', render: (v) => repositories.routes.getById(String(v))?.name ?? '-' },
-            { key: 'plannedDriverId', label: '기사', render: (_, d) => <select value={d.plannedDriverId ?? ''} onChange={(e) => updateDispatch(d, { plannedDriverId: e.target.value || null })} className="rounded-lg border border-input px-2 py-1 text-sm"><option value="">미배정</option>{drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select> },
+            {
+              key: 'plannedDriverId',
+              label: '기사',
+              render: (_, d) => (
+                <select
+                  value={d.plannedDriverId ?? ''}
+                  onChange={(e) => {
+                    updateDispatch(d, { plannedDriverId: e.target.value || null });
+                    if (e.target.value) setDriverRequiredDispatchIds((prev) => prev.filter((id) => id !== d.id));
+                  }}
+                  className={`rounded-lg border px-2 py-1 text-sm ${driverRequiredDispatchIds.includes(d.id) ? 'border-pink-400 bg-pink-50' : 'border-input'}`}
+                >
+                  <option value="">미배정</option>
+                  {drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select>
+              ),
+            },
             { key: 'serviceDate', label: '운행일', render: (v) => formatDate(new Date(String(v)), 'long') },
             {
               key: 'status',
