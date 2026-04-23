@@ -31,15 +31,9 @@ class ChangeLogRepository extends BaseRepository<ChangeLog> {}
 export const repositories = {
   company: new CompanyRepository('company', [{ id: 'company-1', name: '운송 허브', allowedHolidaysPerMonth: 2, defaultBasicSalary: 2400000 }]),
   users: new UserRepository('users', [{ id: 'user-1', name: '관리자', role: 'owner' }]),
-  clients: new ClientRepository('clients', [
-    { id: 'client-1', name: '한빛물류', phone: '010-1111-1111', address: '서울', status: 'active', createdAt: now() },
-  ]),
-  drivers: new DriverRepository('drivers', [
-    { id: 'driver-1', name: '김기사', phone: '010-2222-2222', licenseNumber: 'A123', status: 'active', joinDate: now() },
-  ]),
-  routes: new RouteRepository('routes', [
-    { id: 'route-1', name: '서울-인천:[주간/출근]', startLocation: '서울', endLocation: '인천', distance: 35, estimatedTime: 70, baseRate: 80000, status: 'active', weekdayMask: 62, shiftType: 'day', commuteType: 'goWork', baseAllowanceAmount: 80000, effectiveFrom: now().slice(0, 10) },
-  ]),
+  clients: new ClientRepository('clients', []),
+  drivers: new DriverRepository('drivers', []),
+  routes: new RouteRepository('routes', []),
   dispatches: new DispatchRepository('dispatches', []),
   runs: new RunRepository('runs', []),
   payroll: new PayrollRepository('payroll', []),
