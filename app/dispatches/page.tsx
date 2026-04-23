@@ -282,7 +282,13 @@ export default function DispatchesPage() {
                 <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
                   {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
                 </Button>
-                <Button variant="outline" disabled={!allConfirmedForDate} onClick={copyDispatchSummary}>배차표 복사</Button>
+                <Button
+                  disabled={!allConfirmedForDate}
+                  onClick={copyDispatchSummary}
+                  className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                >
+                  배차표 복사
+                </Button>
               </div>
             ) : <Button onClick={autoGenerate}>자동 생성</Button>}
           </div>

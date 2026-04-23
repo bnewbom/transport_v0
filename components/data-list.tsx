@@ -68,9 +68,9 @@ export function DataList<T extends { id: string }>({
         <table className="w-full">
           <thead className="border-b border-border bg-muted/30">
             <tr>
-              {columns.map((col) => (
+              {columns.map((col, colIndex) => (
                 <th
-                  key={String(col.key)}
+                  key={`${String(col.key)}-${colIndex}`}
                   className={cn('px-4 py-3 text-left text-sm font-semibold text-foreground', col.className)}
                 >
                   {col.label}
@@ -87,8 +87,8 @@ export function DataList<T extends { id: string }>({
                 onClick={() => onRowClick?.(item)}
                 className={cn('bg-card hover:bg-muted/30', onRowClick && 'cursor-pointer transition-colors')}
               >
-                {columns.map((col) => (
-                  <td key={String(col.key)} className={cn('px-4 py-3 text-sm text-foreground', col.className)}>
+                {columns.map((col, colIndex) => (
+                  <td key={`${String(col.key)}-${colIndex}`} className={cn('px-4 py-3 text-sm text-foreground', col.className)}>
                     {col.render ? col.render(item[col.key], item) : String(item[col.key])}
                   </td>
                 ))}
@@ -120,8 +120,8 @@ export function DataList<T extends { id: string }>({
           )}
         >
           <div className="space-y-2">
-            {columns.map((col) => (
-              <div key={String(col.key)} className="flex items-start justify-between gap-2">
+            {columns.map((col, colIndex) => (
+              <div key={`${String(col.key)}-${colIndex}`} className="flex items-start justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">{col.label}</span>
                 <span className="text-sm font-medium text-foreground">
                   {col.render ? col.render(item[col.key], item) : String(item[col.key])}
