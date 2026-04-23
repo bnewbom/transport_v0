@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
-import { DataList, Badge } from '@/components/data-list';
+import { DataList } from '@/components/data-list';
 import { Button } from '@/components/ui/button';
 import { ModalForm } from '@/components/crud/modal-form';
 import { FormField } from '@/components/crud/form-field';
