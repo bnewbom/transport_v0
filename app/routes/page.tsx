@@ -44,6 +44,12 @@ const createRouteFormDefaults = (): RouteForm => ({
 
 const getShiftSlotLabel = (shiftType: Route['shiftType']) => (shiftType === 'day' ? '주간' : '야간');
 const getCommuteTypeLabel = (commuteType: Route['commuteType']) => (commuteType === 'goWork' ? '출근' : '퇴근');
+const sortRoutesByCommuteType = (left: Route, right: Route) => {
+  const commuteOrder = { goWork: 0, offWork: 1 } as const;
+  const byCommuteType = commuteOrder[left.commuteType] - commuteOrder[right.commuteType];
+  if (byCommuteType !== 0) return byCommuteType;
+  return left.name.localeCompare(right.name, 'ko');
+};
 const buildBaseRouteName = (route: Pick<RouteForm, 'startLocation' | 'endLocation' | 'shiftType' | 'commuteType'>) =>
   `${route.startLocation.trim()}-${route.endLocation.trim()}:[${getShiftSlotLabel(route.shiftType)}/${getCommuteTypeLabel(route.commuteType)}]`;
 const buildUniqueRouteName = (baseName: string, usedNames: Set<string>) => {
@@ -87,7 +93,7 @@ export default function RoutesPage() {
   const [editing, setEditing] = React.useState<Route | null>(null);
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'active' | 'inactive'>('all');
-  const [shiftFilter, setShiftFilter] = React.useState<'all' | 'day' | 'night'>('all');
+  const [typeFilter, setTypeFilter] = React.useState<'all' | 'day' | 'night' | 'goWork' | 'offWork'>('all');
   const [dayFilter, setDayFilter] = React.useState<'all' | '0' | '1' | '2' | '3' | '4' | '5' | '6'>('all');
   const [selectedDays, setSelectedDays] = React.useState<number[]>(ALL_DAYS);
   const [form, setForm] = React.useState<RouteForm>(createRouteFormDefaults());
@@ -121,7 +127,7 @@ export default function RoutesPage() {
       row.name = uniqueName;
     });
 
-    setRows(normalizedRows);
+    setRows(normalizedRows.sort(sortRoutesByCommuteType));
   }, []);
 
   React.useEffect(() => {
@@ -153,10 +159,13 @@ export default function RoutesPage() {
   const filtered = rows.filter((row) => {
     const bySearch = row.name.toLowerCase().includes(search.toLowerCase());
     const byStatus = statusFilter === 'all' || row.status === statusFilter;
-    const byShift = shiftFilter === 'all' || row.shiftType === shiftFilter;
+    const byType =
+      typeFilter === 'all'
+      || row.shiftType === typeFilter
+      || row.commuteType === typeFilter;
     const byDay = dayFilter === 'all' || maskIncludesDay(row.weekdayMask, Number(dayFilter));
-    return bySearch && byStatus && byShift && byDay;
-  });
+    return bySearch && byStatus && byType && byDay;
+  }).sort(sortRoutesByCommuteType);
 
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.routes')} />}>
@@ -175,8 +184,8 @@ export default function RoutesPage() {
               <option value="all">전체 요일</option>
               {DAY_LABELS.map((day, idx) => <option key={day} value={String(idx)}>{day}</option>)}
             </select>
-            <select value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value as typeof shiftFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">전체 주/야간</option><option value="day">주간</option><option value="night">야간</option>
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체</option><option value="day">주간</option><option value="night">야간</option><option value="goWork">출근</option><option value="offWork">퇴근</option>
             </select>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
               <option value="all">전체 상태</option><option value="active">활성</option><option value="inactive">비활성</option>
@@ -209,7 +218,7 @@ export default function RoutesPage() {
                 setForm(normalized);
                 setOpen(true);
               }}>수정</Button>
-              <Button size="sm" variant="outline" onClick={() => { repositories.routes.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
+              <Button size="sm" variant="destructive" onClick={() => { repositories.routes.delete(row.id); load(); }}>삭제</Button>
             </div>
           )}
         />
