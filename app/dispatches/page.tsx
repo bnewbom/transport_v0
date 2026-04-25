@@ -236,7 +236,7 @@ export default function DispatchesPage() {
     }
   };
 
-  const drivers = repositories.drivers.getAll().filter((d) => d.status === 'active' && visibleDriverNames.includes(d.name));
+  const drivers = repositories.drivers.getAll();
   const filteredDispatches = rows.filter((d) => {
     const date = String(d.serviceDate ?? d.scheduledDate).slice(0, 10);
     const routeName = repositories.routes.getById(d.routeId)?.name ?? '';
