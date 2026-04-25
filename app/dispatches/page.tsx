@@ -28,7 +28,8 @@ export default function DispatchesPage() {
   const [runs, setRuns] = React.useState<Run[]>([]);
   const [manualOpen, setManualOpen] = React.useState(false);
   const [manualRouteName, setManualRouteName] = React.useState('');
-  const [manualDriverName, setManualDriverName] = React.useState('');
+  const [manualDriverId, setManualDriverId] = React.useState('');
+  const [manualDriverCustomName, setManualDriverCustomName] = React.useState('');
   const [driverRequiredDispatchIds, setDriverRequiredDispatchIds] = React.useState<string[]>([]);
 
   const load = React.useCallback(() => {
@@ -84,7 +85,6 @@ export default function DispatchesPage() {
 
   const createManualDispatch = () => {
     const routeName = manualRouteName.trim();
-    const driverName = manualDriverName.trim();
     if (!routeName) {
       toast.error('수동 생성 실패', '노선을 입력해 주세요.');
       return;
@@ -96,10 +96,21 @@ export default function DispatchesPage() {
       return;
     }
 
-    const driver = driverName ? repositories.drivers.getAll().find((item) => item.status === 'active' && item.name === driverName) : null;
-    if (driverName && !driver) {
-      toast.error('수동 생성 실패', '입력한 기사를 찾을 수 없습니다.');
-      return;
+    let driver = manualDriverId ? repositories.drivers.getById(manualDriverId) : null;
+    if (manualDriverId === '__manual__') {
+      const customName = manualDriverCustomName.trim();
+      if (!customName) {
+        toast.error('수동 생성 실패', '직접 입력할 기사 이름을 입력해 주세요.');
+        return;
+      }
+      const existing = repositories.drivers.getAll().find((item) => item.name === customName);
+      driver = existing ?? repositories.drivers.create({
+        name: customName,
+        phone: '-',
+        licenseNumber: `MANUAL-${Date.now()}`,
+        status: 'active',
+        joinDate: new Date().toISOString(),
+      });
     }
     const dispatch = repositories.dispatches.create({
       routeId: route.id,
@@ -115,7 +126,8 @@ export default function DispatchesPage() {
     });
     recordChangeLog({ entityType: 'dispatch', entityId: dispatch.id, action: 'create', after: dispatch });
     setManualRouteName('');
-    setManualDriverName('');
+    setManualDriverId('');
+    setManualDriverCustomName('');
     setManualOpen(false);
     load();
     toast.success('수동 배차 생성', '배차가 추가되었습니다.');
@@ -295,7 +307,8 @@ export default function DispatchesPage() {
           <Button
             onClick={() => {
               setManualRouteName('');
-              setManualDriverName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
               setManualOpen(true);
             }}
           >
@@ -370,10 +383,19 @@ export default function DispatchesPage() {
             </datalist>
           </FormField>
           <FormField label="기사">
-            <input value={manualDriverName} onChange={(e) => setManualDriverName(e.target.value)} list="manual-driver-list" className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="기사명을 입력하세요(선택)" />
-            <datalist id="manual-driver-list">
-              {drivers.map((driver) => <option key={driver.id} value={driver.name} />)}
-            </datalist>
+            <select value={manualDriverId} onChange={(e) => setManualDriverId(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
+              <option value="">미배정</option>
+              <option value="__manual__">직접입력</option>
+              {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
+            </select>
+            {manualDriverId === '__manual__' && (
+              <input
+                value={manualDriverCustomName}
+                onChange={(e) => setManualDriverCustomName(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-input px-3 py-2 text-sm"
+                placeholder="기사 이름을 입력하세요"
+              />
+            )}
           </FormField>
         </ModalForm>
       </PageContent>
