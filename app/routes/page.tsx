@@ -44,6 +44,12 @@ const createRouteFormDefaults = (): RouteForm => ({
 
 const getShiftSlotLabel = (shiftType: Route['shiftType']) => (shiftType === 'day' ? '주간' : '야간');
 const getCommuteTypeLabel = (commuteType: Route['commuteType']) => (commuteType === 'goWork' ? '출근' : '퇴근');
+const sortRoutesByCommuteType = (left: Route, right: Route) => {
+  const commuteOrder = { goWork: 0, offWork: 1 } as const;
+  const byCommuteType = commuteOrder[left.commuteType] - commuteOrder[right.commuteType];
+  if (byCommuteType !== 0) return byCommuteType;
+  return left.name.localeCompare(right.name, 'ko');
+};
 const buildBaseRouteName = (route: Pick<RouteForm, 'startLocation' | 'endLocation' | 'shiftType' | 'commuteType'>) =>
   `${route.startLocation.trim()}-${route.endLocation.trim()}:[${getShiftSlotLabel(route.shiftType)}/${getCommuteTypeLabel(route.commuteType)}]`;
 const buildUniqueRouteName = (baseName: string, usedNames: Set<string>) => {
@@ -121,7 +127,7 @@ export default function RoutesPage() {
       row.name = uniqueName;
     });
 
-    setRows(normalizedRows);
+    setRows(normalizedRows.sort(sortRoutesByCommuteType));
   }, []);
 
   React.useEffect(() => {
@@ -156,7 +162,7 @@ export default function RoutesPage() {
     const byShift = shiftFilter === 'all' || row.shiftType === shiftFilter;
     const byDay = dayFilter === 'all' || maskIncludesDay(row.weekdayMask, Number(dayFilter));
     return bySearch && byStatus && byShift && byDay;
-  });
+  }).sort(sortRoutesByCommuteType);
 
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.routes')} />}>
@@ -209,7 +215,7 @@ export default function RoutesPage() {
                 setForm(normalized);
                 setOpen(true);
               }}>수정</Button>
-              <Button size="sm" variant="outline" onClick={() => { repositories.routes.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
+              <Button size="sm" variant="destructive" onClick={() => { repositories.routes.delete(row.id); load(); }}>삭제</Button>
             </div>
           )}
         />
