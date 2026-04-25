@@ -3,11 +3,12 @@
 import { repositories } from '@/lib/repository';
 
 const SEED_KEY = 'transport_v0_seed_v3';
+const RESET_KEY = SEED_KEY; // backward compatibility for legacy references
 const now = () => new Date().toISOString();
 
 export function ensureSeedData() {
   if (typeof window === 'undefined') return;
-  if (localStorage.getItem(SEED_KEY)) return;
+  if (localStorage.getItem(SEED_KEY) || localStorage.getItem(RESET_KEY)) return;
 
   if (repositories.routes.getAll().length === 0) {
     repositories.routes.create({
@@ -82,5 +83,6 @@ export function ensureSeedData() {
     });
   }
 
+  localStorage.setItem(SEED_KEY, '1');
   localStorage.setItem(RESET_KEY, '1');
 }
