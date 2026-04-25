@@ -120,7 +120,6 @@ export default function DriversPage() {
               <option value="active">재직</option>
               <option value="leave">휴직</option>
               <option value="resigned">퇴사</option>
-              <option value="inactive">비활성</option>
             </select>
           </div>
           <Button onClick={() => { setEditing(null); setForm(buildFormState(null)); setOpen(true); }}>+ 기사 추가</Button>
@@ -165,7 +164,7 @@ export default function DriversPage() {
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'inactive' }); load(); toast.success('기사 비활성화 완료'); }}>비활성화</Button>
+              <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
             </div>
           )}
         />
@@ -217,7 +216,7 @@ export default function DriversPage() {
               })}
             </div>
           </FormField>
-          <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Driver['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">재직</option><option value="leave">휴직</option><option value="resigned">퇴사</option><option value="inactive">비활성</option></select></FormField>
+          <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Driver['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">재직</option><option value="leave">휴직</option><option value="resigned">퇴사</option></select></FormField>
           <FormField label="퇴사일(선택)"><input type="date" value={form.resignedAt} onChange={(e) => setForm({ ...form, resignedAt: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
         </ModalForm>
       </PageContent>

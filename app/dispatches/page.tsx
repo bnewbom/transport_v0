@@ -384,8 +384,8 @@ export default function DispatchesPage() {
           </FormField>
           <FormField label="기사">
             <select value={manualDriverId} onChange={(e) => setManualDriverId(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
-              <option value="">미배정</option>
-              <option value="__manual__">직접입력</option>
+              <option value="">기사 선택</option>
+              <option value="__manual__">직접 입력</option>
               {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
             </select>
             {manualDriverId === '__manual__' && (

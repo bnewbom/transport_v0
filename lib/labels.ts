@@ -27,6 +27,7 @@ export function getStatusLabel(status: string): string {
 }
 
 export function getDriverStatusLabel(status: Driver['status']) {
+  if (status === 'active') return '재직';
   return getStatusLabel(status);
 }
 
