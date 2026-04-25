@@ -22,7 +22,8 @@ export default function DispatchesPage() {
   const toast = useAppToast();
   const [serviceDate, setServiceDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [search, setSearch] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<'all' | 'draft' | 'published' | 'closed' | 'canceled'>('all');
+  const [shiftFilter, setShiftFilter] = React.useState<'all' | 'day' | 'night'>('all');
+  const [commuteFilter, setCommuteFilter] = React.useState<'all' | 'goWork' | 'offWork'>('all');
   const [rows, setRows] = React.useState<Dispatch[]>([]);
   const [runs, setRuns] = React.useState<Run[]>([]);
   const [manualOpen, setManualOpen] = React.useState(false);
@@ -238,26 +239,48 @@ export default function DispatchesPage() {
   const drivers = repositories.drivers.getAll();
   const filteredDispatches = rows.filter((d) => {
     const date = String(d.serviceDate ?? d.scheduledDate).slice(0, 10);
+    const route = repositories.routes.getById(d.routeId);
     const routeName = repositories.routes.getById(d.routeId)?.name ?? '';
     const driverName = repositories.drivers.getById(d.plannedDriverId ?? '')?.name ?? '';
     const byDate = date === serviceDate;
-    const byStatus = statusFilter === 'all' || d.status === statusFilter;
+    const byShift = shiftFilter === 'all' || route?.shiftType === shiftFilter;
+    const byCommute = commuteFilter === 'all' || route?.commuteType === commuteFilter;
     const q = search.toLowerCase();
     const bySearch = routeName.toLowerCase().includes(q) || driverName.toLowerCase().includes(q);
-    return byDate && byStatus && bySearch;
+    return byDate && byShift && byCommute && bySearch;
   });
   const hasDispatchesForDate = rows.some((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate);
   const allConfirmedForDate = filteredDispatches.length > 0 && filteredDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
   const copyDispatchSummary = async () => {
     const confirmedDispatches = filteredDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
     if (confirmedDispatches.length === 0) return toast.error('복사 실패', '확정된 배차가 없습니다.');
-    const text = confirmedDispatches
-      .map((dispatch, index) => {
-        const routeName = repositories.routes.getById(dispatch.routeId)?.name ?? '-';
-        const driverName = repositories.drivers.getById(dispatch.plannedDriverId ?? '')?.name ?? '미지정';
-        return `${index + 1}. ${routeName} - ${driverName}`;
-      })
-      .join('\n');
+    const groups: Array<{ title: string; items: string[] }> = [
+      { title: '■■■ 주간 / 출근조 ■■■', items: [] },
+      { title: '■■■ 주간 / 퇴근조 ■■■', items: [] },
+      { title: '■■■ 야간 / 출근조 ■■■', items: [] },
+      { title: '■■■ 야간 / 퇴근조 ■■■', items: [] },
+    ];
+
+    confirmedDispatches.forEach((dispatch) => {
+      const route = repositories.routes.getById(dispatch.routeId);
+      if (!route) return;
+      const routeName = route.name ?? '-';
+      const driverName = repositories.drivers.getById(dispatch.plannedDriverId ?? '')?.name ?? '미지정';
+      const line = `${routeName} - ${driverName}`;
+
+      if (route.shiftType === 'day' && route.commuteType === 'goWork') groups[0].items.push(line);
+      if (route.shiftType === 'day' && route.commuteType === 'offWork') groups[1].items.push(line);
+      if (route.shiftType === 'night' && route.commuteType === 'goWork') groups[2].items.push(line);
+      if (route.shiftType === 'night' && route.commuteType === 'offWork') groups[3].items.push(line);
+    });
+
+    const nonEmptySections = groups
+      .filter((group) => group.items.length > 0)
+      .map((group) => {
+        const lines = group.items.map((item, index) => `${index + 1}. ${item}`);
+        return [group.title, ...lines].join('\n');
+      });
+    const text = nonEmptySections.join('\n\n');
 
     try {
       await navigator.clipboard.writeText(text);
@@ -281,12 +304,15 @@ export default function DispatchesPage() {
           <div className="flex gap-2">
             <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">전체 상태</option>
-              <option value="draft">임시저장</option>
-              <option value="published">게시</option>
-              <option value="closed">마감</option>
-              <option value="canceled">취소</option>
+            <select value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value as typeof shiftFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">주/야간 전체</option>
+              <option value="day">주간</option>
+              <option value="night">야간</option>
+            </select>
+            <select value={commuteFilter} onChange={(e) => setCommuteFilter(e.target.value as typeof commuteFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">출/퇴근 전체</option>
+              <option value="goWork">출근</option>
+              <option value="offWork">퇴근</option>
             </select>
             {hasDispatchesForDate ? (
               <div className="flex items-center gap-2">
