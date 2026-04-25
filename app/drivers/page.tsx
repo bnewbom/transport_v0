@@ -15,7 +15,6 @@ import { getDriverStatusLabel } from '@/lib/labels';
 import { useAppToast } from '@/components/crud/toast';
 
 export default function DriversPage() {
-  const allowedDriverNames = React.useMemo(() => ['김민준', '이성호', '박지원'], []);
   type DriverFormState = {
     name: string;
     phone: string;
@@ -52,22 +51,8 @@ export default function DriversPage() {
   const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
   const activeRoutes = React.useMemo(() => repositories.routes.getAll().filter((r) => r.status === 'active'), [rows]);
   const load = React.useCallback(() => {
-    const routeIds = repositories.routes.getAll().map((route) => route.id);
-    const driverTemplates = [
-      { name: '김민준', phone: '010-3000-0001', licenseNumber: 'LIC-KMJ-1001', defaultRouteId: routeIds[0] },
-      { name: '이성호', phone: '010-3000-0002', licenseNumber: 'LIC-LSH-1002', defaultRouteId: routeIds[1] ?? routeIds[0] },
-      { name: '박지원', phone: '010-3000-0003', licenseNumber: 'LIC-PJW-1003', defaultRouteId: routeIds[2] ?? routeIds[0] },
-    ];
-
-    driverTemplates.forEach((template) => {
-      const exists = repositories.drivers.getAll().some((driver) => driver.name === template.name);
-      if (!exists) {
-        repositories.drivers.create({ ...template, status: 'active', joinDate: new Date().toISOString() });
-      }
-    });
-
-    setRows(repositories.drivers.getAll().filter((driver) => allowedDriverNames.includes(driver.name)));
-  }, [allowedDriverNames]);
+    setRows(repositories.drivers.getAll());
+  }, []);
 
   React.useEffect(() => {
     ensureSeedData();

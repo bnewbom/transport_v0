@@ -2,61 +2,83 @@
 
 import { repositories } from '@/lib/repository';
 
-const SEED_KEY = 'transport_v0_seed_v2';
-
+const SEED_KEY = 'transport_v0_seed_v3';
 const now = () => new Date().toISOString();
 
 export function ensureSeedData() {
   if (typeof window === 'undefined') return;
-  const seeded = localStorage.getItem(SEED_KEY);
-  if (seeded) return;
+  if (localStorage.getItem(SEED_KEY)) return;
 
-  const routes = [
-    { id: 'route-seed-1', name: '서울-인천:[주간/출근]', startLocation: '서울', endLocation: '인천', distance: 38, estimatedTime: 70, baseRate: 80000, status: 'active' as const, weekdayMask: 62, shiftType: 'day' as const, commuteType: 'goWork' as const, baseAllowanceAmount: 80000 },
-    { id: 'route-seed-2', name: '서울-수원:[주간/퇴근]', startLocation: '서울', endLocation: '수원', distance: 32, estimatedTime: 60, baseRate: 76000, status: 'active' as const, weekdayMask: 62, shiftType: 'day' as const, commuteType: 'offWork' as const, baseAllowanceAmount: 76000 },
-    { id: 'route-seed-3', name: '서울-천안:[야간/출근]', startLocation: '서울', endLocation: '천안', distance: 95, estimatedTime: 120, baseRate: 120000, status: 'active' as const, weekdayMask: 124, shiftType: 'night' as const, commuteType: 'goWork' as const, baseAllowanceAmount: 120000 },
-    { id: 'route-seed-4', name: '인천-평택:[야간/퇴근]', startLocation: '인천', endLocation: '평택', distance: 84, estimatedTime: 110, baseRate: 115000, status: 'active' as const, weekdayMask: 31, shiftType: 'night' as const, commuteType: 'offWork' as const, baseAllowanceAmount: 115000 },
-    { id: 'route-seed-5', name: '서울-용인:[주간/출근]', startLocation: '서울', endLocation: '용인', distance: 44, estimatedTime: 80, baseRate: 88000, status: 'active' as const, weekdayMask: 127, shiftType: 'day' as const, commuteType: 'goWork' as const, baseAllowanceAmount: 88000 },
-    { id: 'route-seed-6', name: '서울-대전:[주간/퇴근]', startLocation: '서울', endLocation: '대전', distance: 150, estimatedTime: 150, baseRate: 160000, status: 'inactive' as const, weekdayMask: 62, shiftType: 'day' as const, commuteType: 'offWork' as const, baseAllowanceAmount: 160000 },
-  ];
+  if (repositories.routes.getAll().length === 0) {
+    repositories.routes.create({
+      name: '서울-인천:[주간/출근]',
+      startLocation: '서울',
+      endLocation: '인천',
+      distance: 35,
+      estimatedTime: 70,
+      baseRate: 80000,
+      status: 'active',
+      weekdayMask: 62,
+      shiftType: 'day',
+      commuteType: 'goWork',
+      baseAllowanceAmount: 80000,
+      effectiveFrom: now().slice(0, 10),
+    });
+    repositories.routes.create({
+      name: '동탄-수원:[주간/출근]',
+      startLocation: '동탄',
+      endLocation: '수원',
+      distance: 28,
+      estimatedTime: 55,
+      baseRate: 72000,
+      status: 'active',
+      weekdayMask: 62,
+      shiftType: 'day',
+      commuteType: 'goWork',
+      baseAllowanceAmount: 72000,
+      effectiveFrom: now().slice(0, 10),
+    });
+    repositories.routes.create({
+      name: '평택-천안:[야간/퇴근]',
+      startLocation: '평택',
+      endLocation: '천안',
+      distance: 42,
+      estimatedTime: 75,
+      baseRate: 95000,
+      status: 'active',
+      weekdayMask: 124,
+      shiftType: 'night',
+      commuteType: 'offWork',
+      baseAllowanceAmount: 95000,
+      effectiveFrom: now().slice(0, 10),
+    });
+  }
 
-  const clients = [
-    { id: 'client-seed-1', name: '한빛물류', phone: '010-1001-1001', address: '서울 금천구', status: 'active' as const, createdAt: now() },
-    { id: 'client-seed-2', name: '대성유통', phone: '010-1002-1002', address: '경기 수원시', status: 'active' as const, createdAt: now() },
-    { id: 'client-seed-3', name: '푸른상사', phone: '010-1003-1003', address: '인천 남동구', status: 'inactive' as const, createdAt: now() },
-  ];
-
-  const drivers = Array.from({ length: 10 }).map((_, i) => ({
-    id: `driver-seed-${i + 1}`,
-    name: `기사${i + 1}`,
-    phone: `010-20${String(i).padStart(2, '0')}-20${String(i).padStart(2, '0')}`,
-    licenseNumber: `LIC-${1000 + i}`,
-    status: (i === 7 ? 'leave' : i === 8 ? 'resigned' : i === 9 ? 'inactive' : 'active') as 'active' | 'leave' | 'resigned' | 'inactive',
-    joinDate: now(),
-    defaultRouteId: i < 6 ? routes[i % 5].id : undefined,
-  }));
-
-  if (repositories.routes.getAll().length < 5) routes.forEach((r) => repositories.routes.create(r));
-  if (repositories.clients.getAll().length < 2) clients.forEach((c) => repositories.clients.create(c));
-  if (repositories.drivers.getAll().length < 8) drivers.forEach((d) => repositories.drivers.create(d));
-
-  const today = new Date().toISOString().slice(0, 10);
-  const hasToday = repositories.dispatches.getAll().some((d) => (d.serviceDate ?? d.scheduledDate ?? '').toString().slice(0, 10) === today);
-  if (!hasToday) {
-    repositories.routes.getAll().filter((r) => r.status === 'active').slice(0, 3).forEach((route, idx) => {
-      const driver = repositories.drivers.getAll().find((d) => d.status === 'active' && d.defaultRouteId === route.id);
-      repositories.dispatches.create({
-        routeId: route.id,
-        plannedDriverId: driver?.id ?? null,
-        driverId: driver?.id,
-        clientId: repositories.clients.getAll()[idx % repositories.clients.getAll().length]?.id,
-        serviceDate: today,
-        scheduledDate: today,
-        scheduledTime: route.shiftType === 'night' ? '20:00' : '08:00',
-        shiftSlot: route.shiftType === 'night' ? 'pm' : 'am',
-        status: 'draft',
-        createdAt: now(),
-      });
+  if (repositories.drivers.getAll().length === 0) {
+    const [route1, route2, route3] = repositories.routes.getAll();
+    repositories.drivers.create({
+      name: '김민준',
+      phone: '010-3000-0001',
+      licenseNumber: 'LIC-KMJ-1001',
+      status: 'active',
+      joinDate: now(),
+      defaultRouteId: route1?.id,
+    });
+    repositories.drivers.create({
+      name: '이성호',
+      phone: '010-3000-0002',
+      licenseNumber: 'LIC-LSH-1002',
+      status: 'active',
+      joinDate: now(),
+      defaultRouteId: route2?.id,
+    });
+    repositories.drivers.create({
+      name: '박지원',
+      phone: '010-3000-0003',
+      licenseNumber: 'LIC-PJW-1003',
+      status: 'active',
+      joinDate: now(),
+      defaultRouteId: route3?.id,
     });
   }
 
