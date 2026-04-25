@@ -4,7 +4,20 @@ import { repositories } from '@/lib/repository';
 
 const SEED_KEY = 'transport_v0_seed_v4';
 const RESET_KEY = SEED_KEY; // backward compatibility for legacy references
+const SEED_VERSION_KEY = 'transport_v0_seed_version';
+const SEED_VERSION = 'v4';
 const now = () => new Date().toISOString();
+
+const clearSeededData = () => {
+  repositories.clients.clear();
+  repositories.drivers.clear();
+  repositories.routes.clear();
+  repositories.dispatches.clear();
+  repositories.runs.clear();
+  repositories.payroll.clear();
+  repositories.payrollItems.clear();
+  repositories.changeLogs.clear();
+};
 
 const routeSeeds = [
   { name: '건대-동탄센터:[주간/출근]', shiftType: 'day', commuteType: 'goWork' },
@@ -86,7 +99,15 @@ const parseLocations = (routeName: string) => {
 
 export function ensureSeedData() {
   if (typeof window === 'undefined') return;
-  if (localStorage.getItem(SEED_KEY) || localStorage.getItem(RESET_KEY)) return;
+
+  const storedSeedVersion = localStorage.getItem(SEED_VERSION_KEY);
+  const isLatestSeed = storedSeedVersion === SEED_VERSION;
+
+  if (!isLatestSeed) {
+    clearSeededData();
+  } else if (localStorage.getItem(SEED_KEY) || localStorage.getItem(RESET_KEY)) {
+    return;
+  }
 
   if (repositories.routes.getAll().length === 0) {
     routeSeeds.forEach((route) => {
@@ -126,4 +147,5 @@ export function ensureSeedData() {
 
   localStorage.setItem(SEED_KEY, '1');
   localStorage.setItem(RESET_KEY, '1');
+  localStorage.setItem(SEED_VERSION_KEY, SEED_VERSION);
 }
