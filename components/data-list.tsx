@@ -19,6 +19,7 @@ interface DataListProps<T extends { id: string }> {
   emptyMessage?: string;
   onRowClick?: (item: T) => void;
   actions?: (item: T) => React.ReactNode;
+  actionsLabel?: string;
   className?: string;
 }
 
@@ -29,6 +30,7 @@ export function DataList<T extends { id: string }>({
   emptyMessage = t('common.noData'),
   onRowClick,
   actions,
+  actionsLabel = t('common.actions'),
   className,
 }: DataListProps<T>) {
   const [isCompact, setIsCompact] = React.useState(false);
@@ -66,16 +68,16 @@ export function DataList<T extends { id: string }>({
         <table className="w-full">
           <thead className="border-b border-border bg-muted/30">
             <tr>
-              {columns.map((col) => (
+              {columns.map((col, colIndex) => (
                 <th
-                  key={String(col.key)}
+                  key={`${String(col.key)}-${colIndex}`}
                   className={cn('px-4 py-3 text-left text-sm font-semibold text-foreground', col.className)}
                 >
                   {col.label}
                   {col.sortable && <span className="ml-1 text-xs opacity-50">↕</span>}
                 </th>
               ))}
-              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">{t('common.actions')}</th>}
+              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">{actionsLabel}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -85,8 +87,8 @@ export function DataList<T extends { id: string }>({
                 onClick={() => onRowClick?.(item)}
                 className={cn('bg-card hover:bg-muted/30', onRowClick && 'cursor-pointer transition-colors')}
               >
-                {columns.map((col) => (
-                  <td key={String(col.key)} className={cn('px-4 py-3 text-sm text-foreground', col.className)}>
+                {columns.map((col, colIndex) => (
+                  <td key={`${String(col.key)}-${colIndex}`} className={cn('px-4 py-3 text-sm text-foreground', col.className)}>
                     {col.render ? col.render(item[col.key], item) : String(item[col.key])}
                   </td>
                 ))}
@@ -118,14 +120,20 @@ export function DataList<T extends { id: string }>({
           )}
         >
           <div className="space-y-2">
-            {columns.slice(0, 3).map((col) => (
-              <div key={String(col.key)} className="flex items-start justify-between gap-2">
+            {columns.map((col, colIndex) => (
+              <div key={`${String(col.key)}-${colIndex}`} className="flex items-start justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">{col.label}</span>
                 <span className="text-sm font-medium text-foreground">
                   {col.render ? col.render(item[col.key], item) : String(item[col.key])}
                 </span>
               </div>
             ))}
+            {actions && (
+              <div className="pt-1">
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">{actionsLabel}</span>
+                <div onClick={(e) => e.stopPropagation()}>{actions(item)}</div>
+              </div>
+            )}
           </div>
         </div>
       ))}
