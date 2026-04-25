@@ -82,5 +82,5 @@ export function ensureSeedData() {
     });
   }
 
-  localStorage.setItem(SEED_KEY, '1');
+  localStorage.setItem(RESET_KEY, '1');
 }
