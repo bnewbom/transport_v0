@@ -14,8 +14,19 @@ import { ensureSeedData } from '@/lib/seed';
 import { getDriverStatusLabel } from '@/lib/labels';
 import { useAppToast } from '@/components/crud/toast';
 
+const getDriverStatusOrder = (status: Driver['status']) => {
+  if (status === 'active') return 0;
+  if (status === 'leave' || status === 'on-leave') return 1;
+  return 2;
+};
+
+const getDriverBadgeVariant = (status: Driver['status']): 'success' | 'warning' | 'destructive' => {
+  if (status === 'active') return 'success';
+  if (status === 'leave' || status === 'on-leave') return 'warning';
+  return 'destructive';
+};
+
 export default function DriversPage() {
-  const allowedDriverNames = React.useMemo(() => ['김민준', '이성호', '박지원'], []);
   type DriverFormState = {
     name: string;
     phone: string;
@@ -52,22 +63,8 @@ export default function DriversPage() {
   const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
   const activeRoutes = React.useMemo(() => repositories.routes.getAll().filter((r) => r.status === 'active'), [rows]);
   const load = React.useCallback(() => {
-    const routeIds = repositories.routes.getAll().map((route) => route.id);
-    const driverTemplates = [
-      { name: '김민준', phone: '010-3000-0001', licenseNumber: 'LIC-KMJ-1001', defaultRouteId: routeIds[0] },
-      { name: '이성호', phone: '010-3000-0002', licenseNumber: 'LIC-LSH-1002', defaultRouteId: routeIds[1] ?? routeIds[0] },
-      { name: '박지원', phone: '010-3000-0003', licenseNumber: 'LIC-PJW-1003', defaultRouteId: routeIds[2] ?? routeIds[0] },
-    ];
-
-    driverTemplates.forEach((template) => {
-      const exists = repositories.drivers.getAll().some((driver) => driver.name === template.name);
-      if (!exists) {
-        repositories.drivers.create({ ...template, status: 'active', joinDate: new Date().toISOString() });
-      }
-    });
-
-    setRows(repositories.drivers.getAll().filter((driver) => allowedDriverNames.includes(driver.name)));
-  }, [allowedDriverNames]);
+    setRows(repositories.drivers.getAll());
+  }, []);
 
   React.useEffect(() => {
     ensureSeedData();
@@ -115,6 +112,10 @@ export default function DriversPage() {
     const bySearch = row.name.toLowerCase().includes(q) || row.phone.includes(search);
     const byStatus = statusFilter === 'all' || row.status === statusFilter;
     return bySearch && byStatus;
+  }).sort((left, right) => {
+    const byStatus = getDriverStatusOrder(left.status) - getDriverStatusOrder(right.status);
+    if (byStatus !== 0) return byStatus;
+    return left.name.localeCompare(right.name, 'ko');
   });
 
   return (
@@ -135,7 +136,6 @@ export default function DriversPage() {
               <option value="active">재직</option>
               <option value="leave">휴직</option>
               <option value="resigned">퇴사</option>
-              <option value="inactive">비활성</option>
             </select>
           </div>
           <Button onClick={() => { setEditing(null); setForm(buildFormState(null)); setOpen(true); }}>+ 기사 추가</Button>
@@ -175,12 +175,12 @@ export default function DriversPage() {
                 );
               },
             },
-            { key: 'status', label: '상태', render: (v) => <Badge>{getDriverStatusLabel(v)}</Badge> },
+            { key: 'status', label: '상태', render: (v) => <Badge variant={getDriverBadgeVariant(v)}>{getDriverStatusLabel(v)}</Badge> },
           ]}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'inactive' }); load(); toast.success('기사 비활성화 완료'); }}>비활성화</Button>
+              <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
             </div>
           )}
         />
@@ -232,7 +232,7 @@ export default function DriversPage() {
               })}
             </div>
           </FormField>
-          <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Driver['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">재직</option><option value="leave">휴직</option><option value="resigned">퇴사</option><option value="inactive">비활성</option></select></FormField>
+          <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Driver['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">재직</option><option value="leave">휴직</option><option value="resigned">퇴사</option></select></FormField>
           <FormField label="퇴사일(선택)"><input type="date" value={form.resignedAt} onChange={(e) => setForm({ ...form, resignedAt: e.target.value })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
         </ModalForm>
       </PageContent>
