@@ -274,14 +274,13 @@ export default function DispatchesPage() {
       if (route.shiftType === 'night' && route.commuteType === 'offWork') groups[3].items.push(line);
     });
 
-    const text = groups
+    const nonEmptySections = groups
       .filter((group) => group.items.length > 0)
       .map((group) => {
         const lines = group.items.map((item, index) => `${index + 1}. ${item}`);
-        return [group.title, ...lines, ''].join('\n');
-      })
-      .join('\n')
-      .trim();
+        return [group.title, ...lines].join('\n');
+      });
+    const text = nonEmptySections.join('\n\n');
 
     try {
       await navigator.clipboard.writeText(text);
