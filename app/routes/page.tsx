@@ -44,6 +44,8 @@ const createRouteFormDefaults = (): RouteForm => ({
 
 const getShiftSlotLabel = (shiftType: Route['shiftType']) => (shiftType === 'day' ? '주간' : '야간');
 const getCommuteTypeLabel = (commuteType: Route['commuteType']) => (commuteType === 'goWork' ? '출근' : '퇴근');
+const getShiftBadgeVariant = (shiftType: Route['shiftType']): 'success' | 'warning' => shiftType === 'day' ? 'success' : 'warning';
+const getCommuteBadgeVariant = (commuteType: Route['commuteType']): 'success' | 'warning' => commuteType === 'goWork' ? 'success' : 'warning';
 const sortRoutesByCommuteType = (left: Route, right: Route) => {
   const commuteOrder = { goWork: 0, offWork: 1 } as const;
   const byCommuteType = commuteOrder[left.commuteType] - commuteOrder[right.commuteType];
@@ -202,8 +204,8 @@ export default function RoutesPage() {
           columns={[
             { key: 'name', label: '노선명' },
             { key: 'weekdayMask', label: '요일', render: (v) => weekdayMaskToLabels(Number(v)) },
-            { key: 'shiftType', label: '주/야간', render: (v) => <Badge>{getShiftTypeLabel(v)}</Badge> },
-            { key: 'commuteType', label: '출/퇴근', render: (v) => <Badge>{getCommuteTypeLabel(v as Route['commuteType'])}</Badge> },
+            { key: 'shiftType', label: '주/야간', render: (v) => <Badge variant={getShiftBadgeVariant(v as Route['shiftType'])}>{getShiftTypeLabel(v)}</Badge> },
+            { key: 'commuteType', label: '출/퇴근', render: (v) => <Badge variant={getCommuteBadgeVariant(v as Route['commuteType'])}>{getCommuteTypeLabel(v as Route['commuteType'])}</Badge> },
             { key: 'baseAllowanceAmount', label: '기본 수당(1회)', render: (v) => formatKRW(Number(v)) },
           ]}
           actions={(row) => (

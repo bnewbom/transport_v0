@@ -14,6 +14,18 @@ import { ensureSeedData } from '@/lib/seed';
 import { getDriverStatusLabel } from '@/lib/labels';
 import { useAppToast } from '@/components/crud/toast';
 
+const getDriverStatusOrder = (status: Driver['status']) => {
+  if (status === 'active') return 0;
+  if (status === 'leave' || status === 'on-leave') return 1;
+  return 2;
+};
+
+const getDriverBadgeVariant = (status: Driver['status']): 'success' | 'warning' | 'destructive' => {
+  if (status === 'active') return 'success';
+  if (status === 'leave' || status === 'on-leave') return 'warning';
+  return 'destructive';
+};
+
 export default function DriversPage() {
   type DriverFormState = {
     name: string;
@@ -100,6 +112,10 @@ export default function DriversPage() {
     const bySearch = row.name.toLowerCase().includes(q) || row.phone.includes(search);
     const byStatus = statusFilter === 'all' || row.status === statusFilter;
     return bySearch && byStatus;
+  }).sort((left, right) => {
+    const byStatus = getDriverStatusOrder(left.status) - getDriverStatusOrder(right.status);
+    if (byStatus !== 0) return byStatus;
+    return left.name.localeCompare(right.name, 'ko');
   });
 
   return (
@@ -159,12 +175,12 @@ export default function DriversPage() {
                 );
               },
             },
-            { key: 'status', label: '상태', render: (v) => <Badge>{getDriverStatusLabel(v)}</Badge> },
+            { key: 'status', label: '상태', render: (v) => <Badge variant={getDriverBadgeVariant(v)}>{getDriverStatusLabel(v)}</Badge> },
           ]}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
             </div>
           )}
         />
