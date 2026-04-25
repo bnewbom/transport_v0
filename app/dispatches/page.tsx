@@ -275,6 +275,7 @@ export default function DispatchesPage() {
     });
 
     const text = groups
+      .filter((group) => group.items.length > 0)
       .map((group) => {
         const lines = group.items.map((item, index) => `${index + 1}. ${item}`);
         return [group.title, ...lines, ''].join('\n');
