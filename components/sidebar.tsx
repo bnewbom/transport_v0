@@ -132,13 +132,39 @@ interface SidebarLayoutProps {
 }
 
 export function SidebarLayout({ sidebar, header, children }: SidebarLayoutProps) {
+  const pathname = usePathname();
+  const bottomNavItems = [
+    { href: '/clients', label: '거래처' },
+    { href: '/drivers', label: '기사' },
+    { href: '/routes', label: '노선' },
+    { href: '/dispatches', label: '배차' },
+    { href: '/payroll', label: '급여' },
+  ];
+
   return (
     <div className="flex h-screen bg-background">
-      <div className="flex-shrink-0">{sidebar}</div>
+      <div className="hidden flex-shrink-0 lg:block">{sidebar}</div>
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-shrink-0">{header}</div>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto pb-16 lg:pb-0">{children}</main>
       </div>
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex h-16 border-t border-border bg-card lg:hidden">
+        {bottomNavItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex flex-1 items-center justify-center text-sm font-medium',
+                isActive ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
