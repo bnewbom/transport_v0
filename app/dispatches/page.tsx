@@ -17,6 +17,8 @@ import { useAppToast } from '@/components/crud/toast';
 import { dayToBit } from '@/lib/labels';
 import { ensureSeedData } from '@/lib/seed';
 
+type DispatchCategoryFilter = 'all' | 'nightOff' | 'dayGo' | 'nightGo' | 'dayOff';
+
 export default function DispatchesPage() {
   const router = useRouter();
   const toast = useAppToast();
@@ -237,6 +239,22 @@ export default function DispatchesPage() {
   };
 
   const drivers = repositories.drivers.getAll();
+  const getCategoryKey = (dispatch: Dispatch) => {
+    const route = repositories.routes.getById(dispatch.routeId);
+    if (!route) return null;
+    if (route.shiftType === 'night' && route.commuteType === 'offWork') return 'nightOff' as const;
+    if (route.shiftType === 'day' && route.commuteType === 'goWork') return 'dayGo' as const;
+    if (route.shiftType === 'night' && route.commuteType === 'goWork') return 'nightGo' as const;
+    if (route.shiftType === 'day' && route.commuteType === 'offWork') return 'dayOff' as const;
+    return null;
+  };
+  const categoryOrder: Record<'nightOff' | 'dayGo' | 'nightGo' | 'dayOff', number> = {
+    nightOff: 0,
+    dayGo: 1,
+    nightGo: 2,
+    dayOff: 3,
+  };
+
   const filteredDispatches = rows.filter((d) => {
     const date = String(d.serviceDate ?? d.scheduledDate).slice(0, 10);
     const route = repositories.routes.getById(d.routeId);
@@ -288,7 +306,7 @@ export default function DispatchesPage() {
     setDispatchCommuteFilter('offWork');
   };
   const copyDispatchSummary = async () => {
-    const confirmedDispatches = filteredDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+    const confirmedDispatches = sortedDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
     if (confirmedDispatches.length === 0) return toast.error('복사 실패', '확정된 배차가 없습니다.');
     const groups: Array<{ title: string; items: string[] }> = [
       { title: '■■■ 주간 / 출근조 ■■■', items: [] },
@@ -379,6 +397,319 @@ export default function DispatchesPage() {
             ) : <Button onClick={autoGenerate}>자동 생성</Button>}
           </div>
           <Button
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button variant={categoryFilter === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
+          <Button variant={categoryFilter === 'nightOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightOff')}>야간/퇴근</Button>
+          <Button variant={categoryFilter === 'dayGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayGo')}>주간/출근</Button>
+          <Button variant={categoryFilter === 'nightGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightGo')}>야간/출근</Button>
+          <Button variant={categoryFilter === 'dayOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayOff')}>주간/퇴근</Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
             onClick={() => {
               setManualRouteName('');
               setManualDriverId('');
