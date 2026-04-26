@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent, Grid, StatCard } from '@/components/layout-shell';
+import { PageContent } from '@/components/layout-shell';
 import { DataList } from '@/components/data-list';
 import { Button } from '@/components/ui/button';
 import { ModalForm } from '@/components/crud/modal-form';
@@ -22,7 +22,7 @@ export default function DispatchesPage() {
   const toast = useAppToast();
   const [serviceDate, setServiceDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [search, setSearch] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<'all' | 'draft' | 'published' | 'closed' | 'canceled'>('all');
+  const [categoryFilter, setCategoryFilter] = React.useState<'all' | 'nightOff' | 'dayGo' | 'nightGo' | 'dayOff'>('all');
   const [rows, setRows] = React.useState<Dispatch[]>([]);
   const [runs, setRuns] = React.useState<Run[]>([]);
   const [manualOpen, setManualOpen] = React.useState(false);
@@ -236,28 +236,77 @@ export default function DispatchesPage() {
   };
 
   const drivers = repositories.drivers.getAll();
+  const getCategoryKey = (dispatch: Dispatch) => {
+    const route = repositories.routes.getById(dispatch.routeId);
+    if (!route) return null;
+    if (route.shiftType === 'night' && route.commuteType === 'offWork') return 'nightOff' as const;
+    if (route.shiftType === 'day' && route.commuteType === 'goWork') return 'dayGo' as const;
+    if (route.shiftType === 'night' && route.commuteType === 'goWork') return 'nightGo' as const;
+    if (route.shiftType === 'day' && route.commuteType === 'offWork') return 'dayOff' as const;
+    return null;
+  };
+  const categoryOrder: Record<'nightOff' | 'dayGo' | 'nightGo' | 'dayOff', number> = {
+    nightOff: 0,
+    dayGo: 1,
+    nightGo: 2,
+    dayOff: 3,
+  };
+
   const filteredDispatches = rows.filter((d) => {
     const date = String(d.serviceDate ?? d.scheduledDate).slice(0, 10);
+    const route = repositories.routes.getById(d.routeId);
     const routeName = repositories.routes.getById(d.routeId)?.name ?? '';
     const driverName = repositories.drivers.getById(d.plannedDriverId ?? '')?.name ?? '';
     const byDate = date === serviceDate;
-    const byStatus = statusFilter === 'all' || d.status === statusFilter;
+    const categoryKey = getCategoryKey(d);
+    const byCategory = categoryFilter === 'all' || categoryKey === categoryFilter;
     const q = search.toLowerCase();
     const bySearch = routeName.toLowerCase().includes(q) || driverName.toLowerCase().includes(q);
-    return byDate && byStatus && bySearch;
+    return byDate && byCategory && bySearch;
+  });
+  const sortedDispatches = [...filteredDispatches].sort((a, b) => {
+    const aCategory = getCategoryKey(a);
+    const bCategory = getCategoryKey(b);
+    const aOrder = aCategory ? categoryOrder[aCategory] : Number.MAX_SAFE_INTEGER;
+    const bOrder = bCategory ? categoryOrder[bCategory] : Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+
+    const aRouteName = repositories.routes.getById(a.routeId)?.name ?? '';
+    const bRouteName = repositories.routes.getById(b.routeId)?.name ?? '';
+    return aRouteName.localeCompare(bRouteName, 'ko');
   });
   const hasDispatchesForDate = rows.some((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate);
-  const allConfirmedForDate = filteredDispatches.length > 0 && filteredDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+  const allConfirmedForDate = sortedDispatches.length > 0 && sortedDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
   const copyDispatchSummary = async () => {
-    const confirmedDispatches = filteredDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+    const confirmedDispatches = sortedDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
     if (confirmedDispatches.length === 0) return toast.error('복사 실패', '확정된 배차가 없습니다.');
-    const text = confirmedDispatches
-      .map((dispatch, index) => {
-        const routeName = repositories.routes.getById(dispatch.routeId)?.name ?? '-';
-        const driverName = repositories.drivers.getById(dispatch.plannedDriverId ?? '')?.name ?? '미지정';
-        return `${index + 1}. ${routeName} - ${driverName}`;
-      })
-      .join('\n');
+    const groups: Array<{ title: string; items: string[] }> = [
+      { title: '■■■ 주간 / 출근조 ■■■', items: [] },
+      { title: '■■■ 주간 / 퇴근조 ■■■', items: [] },
+      { title: '■■■ 야간 / 출근조 ■■■', items: [] },
+      { title: '■■■ 야간 / 퇴근조 ■■■', items: [] },
+    ];
+
+    confirmedDispatches.forEach((dispatch) => {
+      const route = repositories.routes.getById(dispatch.routeId);
+      if (!route) return;
+      const routeName = route.name ?? '-';
+      const driverName = repositories.drivers.getById(dispatch.plannedDriverId ?? '')?.name ?? '미지정';
+      const line = `${routeName} - ${driverName}`;
+
+      if (route.shiftType === 'day' && route.commuteType === 'goWork') groups[0].items.push(line);
+      if (route.shiftType === 'day' && route.commuteType === 'offWork') groups[1].items.push(line);
+      if (route.shiftType === 'night' && route.commuteType === 'goWork') groups[2].items.push(line);
+      if (route.shiftType === 'night' && route.commuteType === 'offWork') groups[3].items.push(line);
+    });
+
+    const nonEmptySections = groups
+      .filter((group) => group.items.length > 0)
+      .map((group) => {
+        const lines = group.items.map((item, index) => `${index + 1}. ${item}`);
+        return [group.title, ...lines].join('\n');
+      });
+    const text = nonEmptySections.join('\n\n');
 
     try {
       await navigator.clipboard.writeText(text);
@@ -270,24 +319,10 @@ export default function DispatchesPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.dispatches')} />}>
       <PageContent>
-        <Grid columns={4} className="mb-4">
-          <StatCard label="당일 배차" value={filteredDispatches.length} />
-          <StatCard label="게시" value={filteredDispatches.filter((d) => d.status === 'published').length} />
-          <StatCard label="마감" value={filteredDispatches.filter((d) => d.status === 'closed').length} />
-          <StatCard label="당일 운행" value={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate).length} />
-        </Grid>
-
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex gap-2">
             <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">전체 상태</option>
-              <option value="draft">임시저장</option>
-              <option value="published">게시</option>
-              <option value="closed">마감</option>
-              <option value="canceled">취소</option>
-            </select>
             {hasDispatchesForDate ? (
               <div className="flex items-center gap-2">
                 <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
@@ -314,9 +349,16 @@ export default function DispatchesPage() {
             + 수동 배차 추가
           </Button>
         </div>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button variant={categoryFilter === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
+          <Button variant={categoryFilter === 'nightOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightOff')}>야간/퇴근</Button>
+          <Button variant={categoryFilter === 'dayGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayGo')}>주간/출근</Button>
+          <Button variant={categoryFilter === 'nightGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightGo')}>야간/출근</Button>
+          <Button variant={categoryFilter === 'dayOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayOff')}>주간/퇴근</Button>
+        </div>
 
         <DataList
-          data={filteredDispatches}
+          data={sortedDispatches}
           actionsLabel="운행 상태"
           columns={[
             { key: 'routeId', label: '노선', render: (v) => repositories.routes.getById(String(v))?.name ?? '-' },
