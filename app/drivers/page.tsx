@@ -118,6 +118,32 @@ export default function DriversPage() {
     return left.name.localeCompare(right.name, 'ko');
   });
 
+  const renderRouteSelector = React.useCallback((row: Driver) => {
+    const rowRouteIds = row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : [''];
+    return (
+      <div className="space-y-2">
+        {rowRouteIds.map((routeId, idx) => {
+          const selectedByOthers = new Set(rowRouteIds.filter((_, i) => i !== idx).filter(Boolean));
+          const selectableRoutes = allRoutes.filter((route) => !selectedByOthers.has(route.id));
+          const routeKey = `${row.id}-${idx}`;
+          return (
+            <div key={`${row.id}-${routeId || 'empty'}-${idx}`}>
+              <select
+                value={routeId}
+                onChange={(e) => handleInlineRouteChange(row, idx, e.target.value)}
+                disabled={Boolean(savingRouteByKey[routeKey])}
+                className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-70"
+              >
+                <option value="">미지정</option>
+                {selectableRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [allRoutes, savingRouteByKey]);
+
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.drivers')} />}>
       <PageContent>
@@ -149,34 +175,32 @@ export default function DriversPage() {
             {
               key: 'defaultRouteId',
               label: '노선',
-              render: (_, row) => {
-                const rowRouteIds = row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : [''];
-                return (
-                <div className="space-y-2">
-                  {rowRouteIds.map((routeId, idx) => {
-                    const selectedByOthers = new Set(rowRouteIds.filter((_, i) => i !== idx).filter(Boolean));
-                    const selectableRoutes = allRoutes.filter((route) => !selectedByOthers.has(route.id));
-                    const routeKey = `${row.id}-${idx}`;
-                    return (
-                    <div key={`${row.id}-${routeId || 'empty'}-${idx}`}>
-                      <select
-                        value={routeId}
-                        onChange={(e) => handleInlineRouteChange(row, idx, e.target.value)}
-                        disabled={Boolean(savingRouteByKey[routeKey])}
-                        className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-70"
-                      >
-                        <option value="">미지정</option>
-                        {selectableRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
-                      </select>
-                    </div>
-                    );
-                  })}
-                </div>
-                );
-              },
+              render: (_, row) => renderRouteSelector(row),
             },
             { key: 'status', label: '상태', render: (v) => <Badge variant={getDriverBadgeVariant(v)}>{getDriverStatusLabel(v)}</Badge> },
           ]}
+          mobileCardRender={(row) => (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant={getDriverBadgeVariant(row.status)}>{getDriverStatusLabel(row.status)}</Badge>
+                  <span className="text-sm font-semibold text-foreground">{row.name}</span>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
+                  <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+                </div>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">연락처</span>
+                <span className="text-sm text-foreground">{row.phone}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">노선</span>
+                <div>{renderRouteSelector(row)}</div>
+              </div>
+            </div>
+          )}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
