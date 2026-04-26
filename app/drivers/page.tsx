@@ -121,24 +121,24 @@ export default function DriversPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.drivers')} />}>
       <PageContent>
-        <div className="mb-4 grid gap-4 md:grid-cols-4">
+        <div className="mb-4 hidden gap-4 md:grid md:grid-cols-4">
           <StatCard label="전체 기사" value={rows.length} />
           <StatCard label="재직" value={rows.filter((x) => x.status === 'active').length} />
           <StatCard label="휴직" value={rows.filter((x) => x.status === 'leave' || x.status === 'on-leave').length} />
           <StatCard label="퇴사/비활성" value={rows.filter((x) => x.status === 'resigned' || x.status === 'inactive').length} />
         </div>
 
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex gap-2">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="기사명/전화번호 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        <div className="mb-4 grid gap-2 md:flex md:items-center md:justify-between">
+          <div className="grid gap-2 md:flex">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="기사명/전화번호 검색" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:w-auto" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:w-auto">
               <option value="all">전체 상태</option>
               <option value="active">재직</option>
               <option value="leave">휴직</option>
               <option value="resigned">퇴사</option>
             </select>
           </div>
-          <Button onClick={() => { setEditing(null); setForm(buildFormState(null)); setOpen(true); }}>+ 기사 추가</Button>
+          <Button className="w-full md:w-auto" onClick={() => { setEditing(null); setForm(buildFormState(null)); setOpen(true); }}>+ 기사 추가</Button>
         </div>
 
         <DataList
