@@ -20,6 +20,7 @@ interface DataListProps<T extends { id: string }> {
   onRowClick?: (item: T) => void;
   actions?: (item: T) => React.ReactNode;
   actionsLabel?: string;
+  mobileCardRender?: (item: T) => React.ReactNode;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export function DataList<T extends { id: string }>({
   onRowClick,
   actions,
   actionsLabel = t('common.actions'),
+  mobileCardRender,
   className,
 }: DataListProps<T>) {
   const [isCompact, setIsCompact] = React.useState(false);
@@ -119,6 +121,9 @@ export function DataList<T extends { id: string }>({
             onRowClick && 'cursor-pointer transition-colors hover:bg-muted/30'
           )}
         >
+          {mobileCardRender ? (
+            <div onClick={(e) => e.stopPropagation()}>{mobileCardRender(item)}</div>
+          ) : (
           <div className="space-y-2">
             {columns.map((col, colIndex) => (
               <div key={`${String(col.key)}-${colIndex}`} className="flex items-start justify-between gap-2">
@@ -135,6 +140,7 @@ export function DataList<T extends { id: string }>({
               </div>
             )}
           </div>
+          )}
         </div>
       ))}
     </div>
