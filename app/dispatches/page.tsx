@@ -22,8 +22,6 @@ export default function DispatchesPage() {
   const toast = useAppToast();
   const [serviceDate, setServiceDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [search, setSearch] = React.useState('');
-  const [shiftFilter, setShiftFilter] = React.useState<'all' | 'day' | 'night'>('all');
-  const [commuteFilter, setCommuteFilter] = React.useState<'all' | 'goWork' | 'offWork'>('all');
   const [categoryFilter, setCategoryFilter] = React.useState<'all' | 'nightOff' | 'dayGo' | 'nightGo' | 'dayOff'>('all');
   const [rows, setRows] = React.useState<Dispatch[]>([]);
   const [runs, setRuns] = React.useState<Run[]>([]);
@@ -260,13 +258,11 @@ export default function DispatchesPage() {
     const routeName = repositories.routes.getById(d.routeId)?.name ?? '';
     const driverName = repositories.drivers.getById(d.plannedDriverId ?? '')?.name ?? '';
     const byDate = date === serviceDate;
-    const byShift = shiftFilter === 'all' || route?.shiftType === shiftFilter;
-    const byCommute = commuteFilter === 'all' || route?.commuteType === commuteFilter;
     const categoryKey = getCategoryKey(d);
     const byCategory = categoryFilter === 'all' || categoryKey === categoryFilter;
     const q = search.toLowerCase();
     const bySearch = routeName.toLowerCase().includes(q) || driverName.toLowerCase().includes(q);
-    return byDate && byShift && byCommute && byCategory && bySearch;
+    return byDate && byCategory && bySearch;
   });
   const sortedDispatches = [...filteredDispatches].sort((a, b) => {
     const aCategory = getCategoryKey(a);
@@ -323,28 +319,10 @@ export default function DispatchesPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.dispatches')} />}>
       <PageContent>
-        <div className="mb-4 flex flex-wrap gap-2">
-          <Button variant={categoryFilter === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
-          <Button variant={categoryFilter === 'nightOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightOff')}>야간/퇴근</Button>
-          <Button variant={categoryFilter === 'dayGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayGo')}>주간/출근</Button>
-          <Button variant={categoryFilter === 'nightGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightGo')}>야간/출근</Button>
-          <Button variant={categoryFilter === 'dayOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayOff')}>주간/퇴근</Button>
-        </div>
-
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex gap-2">
             <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            <select value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value as typeof shiftFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">주/야간 전체</option>
-              <option value="day">주간</option>
-              <option value="night">야간</option>
-            </select>
-            <select value={commuteFilter} onChange={(e) => setCommuteFilter(e.target.value as typeof commuteFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">출/퇴근 전체</option>
-              <option value="goWork">출근</option>
-              <option value="offWork">퇴근</option>
-            </select>
             {hasDispatchesForDate ? (
               <div className="flex items-center gap-2">
                 <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
@@ -370,6 +348,13 @@ export default function DispatchesPage() {
           >
             + 수동 배차 추가
           </Button>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button variant={categoryFilter === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
+          <Button variant={categoryFilter === 'nightOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightOff')}>야간/퇴근</Button>
+          <Button variant={categoryFilter === 'dayGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayGo')}>주간/출근</Button>
+          <Button variant={categoryFilter === 'nightGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightGo')}>야간/출근</Button>
+          <Button variant={categoryFilter === 'dayOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayOff')}>주간/퇴근</Button>
         </div>
 
         <DataList
