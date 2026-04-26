@@ -132,13 +132,13 @@ export default function PayrollPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.payroll')} />}>
       <PageContent>
-        <Grid columns={3} className="mb-4">
+        <Grid columns={3} className="mb-4 hidden md:grid">
           <StatCard label="정산 건수" value={filteredRows.length} />
           <StatCard label="임시저장" value={filteredRows.filter((row) => row.status === 'draft').length} />
           <StatCard label="확정" value={filteredRows.filter((row) => row.status === 'confirmed').length} />
         </Grid>
 
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 hidden gap-2 md:flex">
           <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="rounded-lg border border-input px-3 py-2 text-sm" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="기사명 검색" className="rounded-lg border border-input px-3 py-2 text-sm" />
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input px-3 py-2 text-sm">
@@ -148,6 +148,18 @@ export default function PayrollPage() {
           </select>
           <Button onClick={generate}>월 정산 생성</Button>
           <Button variant="outline" onClick={downloadCsv}>엑셀 다운로드</Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full rounded-lg border border-input px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="기사명 검색" className="w-full rounded-lg border border-input px-3 py-2 text-sm" />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="w-full rounded-lg border border-input px-3 py-2 text-sm">
+            <option value="all">전체 상태</option>
+            <option value="draft">임시저장</option>
+            <option value="confirmed">확정</option>
+          </select>
+          <Button className="w-full" onClick={generate}>월 정산 생성</Button>
+          <Button className="w-full" variant="outline" onClick={downloadCsv}>엑셀 다운로드</Button>
         </div>
 
         <DataList<PayrollRow>
