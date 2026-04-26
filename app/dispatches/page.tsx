@@ -251,6 +251,40 @@ export default function DispatchesPage() {
   });
   const hasDispatchesForDate = rows.some((dispatch) => String(dispatch.serviceDate ?? dispatch.scheduledDate).slice(0, 10) === serviceDate);
   const allConfirmedForDate = filteredDispatches.length > 0 && filteredDispatches.every((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
+  const mobileFilterKey: 'all' | 'night-off' | 'day-go' | 'night-go' | 'day-off' =
+    shiftFilter === 'night' && commuteFilter === 'offWork'
+      ? 'night-off'
+      : shiftFilter === 'day' && commuteFilter === 'goWork'
+        ? 'day-go'
+        : shiftFilter === 'night' && commuteFilter === 'goWork'
+          ? 'night-go'
+          : shiftFilter === 'day' && commuteFilter === 'offWork'
+            ? 'day-off'
+            : 'all';
+  const setMobileFilterKey = (key: 'all' | 'night-off' | 'day-go' | 'night-go' | 'day-off') => {
+    if (key === 'all') {
+      setShiftFilter('all');
+      setCommuteFilter('all');
+      return;
+    }
+    if (key === 'night-off') {
+      setShiftFilter('night');
+      setCommuteFilter('offWork');
+      return;
+    }
+    if (key === 'day-go') {
+      setShiftFilter('day');
+      setCommuteFilter('goWork');
+      return;
+    }
+    if (key === 'night-go') {
+      setShiftFilter('night');
+      setCommuteFilter('goWork');
+      return;
+    }
+    setShiftFilter('day');
+    setCommuteFilter('offWork');
+  };
   const copyDispatchSummary = async () => {
     const confirmedDispatches = filteredDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
     if (confirmedDispatches.length === 0) return toast.error('복사 실패', '확정된 배차가 없습니다.');
@@ -293,14 +327,27 @@ export default function DispatchesPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.dispatches')} />}>
       <PageContent>
-        <Grid columns={4} className="mb-4">
-          <StatCard label="당일 배차" value={filteredDispatches.length} />
-          <StatCard label="게시" value={filteredDispatches.filter((d) => d.status === 'published').length} />
-          <StatCard label="마감" value={filteredDispatches.filter((d) => d.status === 'closed').length} />
-          <StatCard label="당일 운행" value={runs.filter((r) => String(r.serviceDate).slice(0, 10) === serviceDate).length} />
+        <Grid columns={4} className="mb-4 hidden md:grid md:grid-cols-5">
+          <StatCard label="전체" value={filteredDispatches.length} />
+          <StatCard label="야간/퇴근" value={filteredDispatches.filter((d) => {
+            const route = repositories.routes.getById(d.routeId);
+            return route?.shiftType === 'night' && route?.commuteType === 'offWork';
+          }).length} />
+          <StatCard label="주간/출근" value={filteredDispatches.filter((d) => {
+            const route = repositories.routes.getById(d.routeId);
+            return route?.shiftType === 'day' && route?.commuteType === 'goWork';
+          }).length} />
+          <StatCard label="야간/출근" value={filteredDispatches.filter((d) => {
+            const route = repositories.routes.getById(d.routeId);
+            return route?.shiftType === 'night' && route?.commuteType === 'goWork';
+          }).length} />
+          <StatCard label="주간/퇴근" value={filteredDispatches.filter((d) => {
+            const route = repositories.routes.getById(d.routeId);
+            return route?.shiftType === 'day' && route?.commuteType === 'offWork';
+          }).length} />
         </Grid>
 
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-4 hidden items-center justify-between gap-2 md:flex">
           <div className="flex gap-2">
             <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
@@ -330,6 +377,57 @@ export default function DispatchesPage() {
             ) : <Button onClick={autoGenerate}>자동 생성</Button>}
           </div>
           <Button
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
             onClick={() => {
               setManualRouteName('');
               setManualDriverId('');
