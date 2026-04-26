@@ -169,14 +169,15 @@ export default function RoutesPage() {
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.routes')} />}>
       <PageContent>
-        <div className="mb-4 grid gap-4 md:grid-cols-4">
+        <div className="mb-4 hidden gap-4 md:grid md:grid-cols-5">
           <StatCard label="전체 노선" value={rows.length} />
-          <StatCard label="주간" value={rows.filter((x) => x.shiftType === 'day').length} />
-          <StatCard label="야간" value={rows.filter((x) => x.shiftType === 'night').length} />
-          <StatCard label="출근" value={rows.filter((x) => x.commuteType === 'goWork').length} />
+          <StatCard label="야간/퇴근" value={rows.filter((x) => x.shiftType === 'night' && x.commuteType === 'offWork').length} />
+          <StatCard label="주간/출근" value={rows.filter((x) => x.shiftType === 'day' && x.commuteType === 'goWork').length} />
+          <StatCard label="야간/출근" value={rows.filter((x) => x.shiftType === 'night' && x.commuteType === 'goWork').length} />
+          <StatCard label="주간/퇴근" value={rows.filter((x) => x.shiftType === 'day' && x.commuteType === 'offWork').length} />
         </div>
 
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-4 hidden items-center justify-between gap-2 md:flex">
           <div className="flex gap-2">
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
             <select value={dayFilter} onChange={(e) => setDayFilter(e.target.value as typeof dayFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
@@ -191,6 +192,29 @@ export default function RoutesPage() {
             </select>
           </div>
           <Button onClick={() => {
+            const emptyForm = createRouteFormDefaults();
+            setEditing(null);
+            setForm(emptyForm);
+            setSelectedDays(ALL_DAYS);
+            setOpen(true);
+          }}>+ 노선 추가</Button>
+        </div>
+
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명 검색" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid gap-2">
+            <select value={dayFilter} onChange={(e) => setDayFilter(e.target.value as typeof dayFilter)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">전체 요일</option>
+              {DAY_LABELS.map((day, idx) => <option key={day} value={String(idx)}>{day}</option>)}
+            </select>
+            <select value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value as typeof shiftFilter)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">주/야간 전체</option><option value="day">주간</option><option value="night">야간</option>
+            </select>
+            <select value={commuteFilter} onChange={(e) => setCommuteFilter(e.target.value as typeof commuteFilter)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="all">출/퇴근 전체</option><option value="goWork">출근</option><option value="offWork">퇴근</option>
+            </select>
+          </div>
+          <Button className="w-full" onClick={() => {
             const emptyForm = createRouteFormDefaults();
             setEditing(null);
             setForm(emptyForm);
