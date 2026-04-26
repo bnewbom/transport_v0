@@ -183,13 +183,9 @@ export default function DriversPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Badge variant={getDriverBadgeVariant(row.status)}>{getDriverStatusLabel(row.status)}</Badge>
                   <span className="text-sm font-semibold text-foreground">{row.name}</span>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-                  <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
-                </div>
+                <Badge variant={getDriverBadgeVariant(row.status)}>{getDriverStatusLabel(row.status)}</Badge>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">연락처</span>
@@ -198,6 +194,10 @@ export default function DriversPage() {
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">노선</span>
                 <div>{renderRouteSelector(row)}</div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
+                <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'inactive' }); load(); toast.success('기사 비활성화 처리 완료'); }}>비활성화</Button>
               </div>
             </div>
           )}

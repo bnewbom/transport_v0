@@ -81,13 +81,13 @@ export default function ClientsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Badge variant={getClientBadgeVariant(row.status)}>{getStatusLabel(row.status)}</Badge>
                   <span className="text-sm font-semibold text-foreground">{row.name}</span>
                 </div>
-                <div className="flex justify-end gap-2">
+                <Badge variant={getClientBadgeVariant(row.status)}>{getStatusLabel(row.status)}</Badge>
+              </div>
+              <div className="flex justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
                   <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
-                </div>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">연락처</span>

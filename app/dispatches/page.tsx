@@ -26,7 +26,6 @@ export default function DispatchesPage() {
   const [search, setSearch] = React.useState('');
   const [dispatchShiftFilter, setDispatchShiftFilter] = React.useState<'all' | 'day' | 'night'>('all');
   const [dispatchCommuteFilter, setDispatchCommuteFilter] = React.useState<'all' | 'goWork' | 'offWork'>('all');
-  const [categoryFilter, setCategoryFilterState] = React.useState<DispatchCategoryFilter>('all');
   const [rows, setRows] = React.useState<Dispatch[]>([]);
   const [runs, setRuns] = React.useState<Run[]>([]);
   const [manualOpen, setManualOpen] = React.useState(false);
@@ -306,44 +305,6 @@ export default function DispatchesPage() {
     setDispatchShiftFilter('day');
     setDispatchCommuteFilter('offWork');
   };
-  const setCategoryFilter = React.useCallback((next: DispatchCategoryFilter) => {
-    setCategoryFilterState(next);
-    if (next === 'all') {
-      setDispatchShiftFilter('all');
-      setDispatchCommuteFilter('all');
-      return;
-    }
-    if (next === 'nightOff') {
-      setDispatchShiftFilter('night');
-      setDispatchCommuteFilter('offWork');
-      return;
-    }
-    if (next === 'dayGo') {
-      setDispatchShiftFilter('day');
-      setDispatchCommuteFilter('goWork');
-      return;
-    }
-    if (next === 'nightGo') {
-      setDispatchShiftFilter('night');
-      setDispatchCommuteFilter('goWork');
-      return;
-    }
-    setDispatchShiftFilter('day');
-    setDispatchCommuteFilter('offWork');
-  }, []);
-  React.useEffect(() => {
-    const next: DispatchCategoryFilter =
-      dispatchShiftFilter === 'night' && dispatchCommuteFilter === 'offWork'
-        ? 'nightOff'
-        : dispatchShiftFilter === 'day' && dispatchCommuteFilter === 'goWork'
-          ? 'dayGo'
-          : dispatchShiftFilter === 'night' && dispatchCommuteFilter === 'goWork'
-            ? 'nightGo'
-            : dispatchShiftFilter === 'day' && dispatchCommuteFilter === 'offWork'
-              ? 'dayOff'
-              : 'all';
-    if (next !== categoryFilter) setCategoryFilterState(next);
-  }, [dispatchShiftFilter, dispatchCommuteFilter, categoryFilter]);
   const copyDispatchSummary = async () => {
     const confirmedDispatches = sortedDispatches.filter((dispatch) => runs.some((run) => run.dispatchId === dispatch.id));
     if (confirmedDispatches.length === 0) return toast.error('복사 실패', '확정된 배차가 없습니다.');
@@ -760,6 +721,57 @@ export default function DispatchesPage() {
           </Button>
         </div>
 
+        <div className="mb-4 grid gap-2 md:hidden">
+          <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="배차 선택" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+          <div className="grid grid-cols-5 gap-1">
+            {[
+              { key: 'all' as const, label: '전체' },
+              { key: 'night-off' as const, label: '야/퇴' },
+              { key: 'day-go' as const, label: '주/출' },
+              { key: 'night-go' as const, label: '야/출' },
+              { key: 'day-off' as const, label: '주/퇴' },
+            ].map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                variant={mobileFilterKey === item.key ? 'default' : 'outline'}
+                className="px-1 text-xs"
+                onClick={() => setMobileFilterKey(item.key)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border/70" />
+          {hasDispatchesForDate ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
+                {allConfirmedForDate ? '모두 운행 취소' : '모두 운행 확정'}
+              </Button>
+              <Button
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300 disabled:text-white"
+                disabled={!allConfirmedForDate}
+                onClick={copyDispatchSummary}
+              >
+                배차표 복사
+              </Button>
+            </div>
+          ) : <Button className="w-full" onClick={autoGenerate}>자동 생성</Button>}
+          <Button
+            className="w-full"
+            onClick={() => {
+              setManualRouteName('');
+              setManualDriverId('');
+              setManualDriverCustomName('');
+              setManualOpen(true);
+            }}
+          >
+            + 수동 배차 추가
+          </Button>
+        </div>
+
         <DataList
           data={sortedDispatches}
           actionsLabel="운행 상태"
@@ -810,6 +822,39 @@ export default function DispatchesPage() {
               },
             },
           ]}
+          mobileCardRender={(d) => {
+            const run = runs.find((item) => item.dispatchId === d.id);
+            const routeName = repositories.routes.getById(d.routeId)?.name ?? '-';
+            const allowance = formatKRW(Number(run?.allowanceAmount ?? repositories.routes.getById(d.routeId)?.baseAllowanceAmount ?? repositories.routes.getById(d.routeId)?.baseRate ?? 0));
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground">{routeName}</span>
+                  <Button size="sm" variant={run ? 'destructive' : 'default'} onClick={() => toggleRun(d)}>
+                    {run ? '운행 취소' : '운행 확정'}
+                  </Button>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-medium text-muted-foreground">기사</span>
+                  <select
+                    value={d.plannedDriverId ?? ''}
+                    onChange={(e) => {
+                      updateDispatch(d, { plannedDriverId: e.target.value || null });
+                      if (e.target.value) setDriverRequiredDispatchIds((prev) => prev.filter((id) => id !== d.id));
+                    }}
+                    className={`rounded-lg border px-2 py-1 text-sm ${driverRequiredDispatchIds.includes(d.id) ? 'border-pink-400 bg-pink-50' : 'border-input'}`}
+                  >
+                    <option value="">미배정</option>
+                    {drivers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-medium text-muted-foreground">수당</span>
+                  <span className="text-sm text-foreground">{allowance}</span>
+                </div>
+              </div>
+            );
+          }}
           actions={(d) => (
             <div className="flex items-center gap-2">
               <Button size="sm" variant={runs.some((run) => run.dispatchId === d.id) ? 'destructive' : 'default'} onClick={() => toggleRun(d)}>

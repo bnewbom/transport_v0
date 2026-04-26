@@ -232,6 +232,29 @@ export default function RoutesPage() {
             { key: 'commuteType', label: '출/퇴근', render: (v) => <Badge variant={getCommuteBadgeVariant(v as Route['commuteType'])}>{getCommuteTypeLabel(v as Route['commuteType'])}</Badge> },
             { key: 'baseAllowanceAmount', label: '기본 수당(1회)', render: (v) => formatKRW(Number(v)) },
           ]}
+          mobileCardRender={(row) => (
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-foreground">{row.name}</div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">요일</span>
+                <span className="text-sm text-foreground">{weekdayMaskToLabels(Number(row.weekdayMask))}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">기본 수당(1회)</span>
+                <span className="text-sm text-foreground">{formatKRW(Number(row.baseAllowanceAmount))}</span>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => {
+                  setEditing(row);
+                  const normalized = normalizeRouteForm(row);
+                  setSelectedDays(ALL_DAYS.filter((day) => maskIncludesDay(normalized.weekdayMask, day)));
+                  setForm(normalized);
+                  setOpen(true);
+                }}>수정</Button>
+                <Button size="sm" variant="destructive" onClick={() => { repositories.routes.delete(row.id); load(); }}>삭제</Button>
+              </div>
+            </div>
+          )}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => {
