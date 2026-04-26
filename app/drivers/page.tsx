@@ -118,27 +118,53 @@ export default function DriversPage() {
     return left.name.localeCompare(right.name, 'ko');
   });
 
+  const renderRouteSelector = React.useCallback((row: Driver) => {
+    const rowRouteIds = row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : [''];
+    return (
+      <div className="space-y-2">
+        {rowRouteIds.map((routeId, idx) => {
+          const selectedByOthers = new Set(rowRouteIds.filter((_, i) => i !== idx).filter(Boolean));
+          const selectableRoutes = allRoutes.filter((route) => !selectedByOthers.has(route.id));
+          const routeKey = `${row.id}-${idx}`;
+          return (
+            <div key={`${row.id}-${routeId || 'empty'}-${idx}`}>
+              <select
+                value={routeId}
+                onChange={(e) => handleInlineRouteChange(row, idx, e.target.value)}
+                disabled={Boolean(savingRouteByKey[routeKey])}
+                className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-70"
+              >
+                <option value="">미지정</option>
+                {selectableRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [allRoutes, savingRouteByKey]);
+
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.drivers')} />}>
       <PageContent>
-        <div className="mb-4 grid gap-4 md:grid-cols-4">
+        <div className="mb-4 hidden gap-4 md:grid md:grid-cols-4">
           <StatCard label="전체 기사" value={rows.length} />
           <StatCard label="재직" value={rows.filter((x) => x.status === 'active').length} />
           <StatCard label="휴직" value={rows.filter((x) => x.status === 'leave' || x.status === 'on-leave').length} />
           <StatCard label="퇴사/비활성" value={rows.filter((x) => x.status === 'resigned' || x.status === 'inactive').length} />
         </div>
 
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex gap-2">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="기사명/전화번호 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        <div className="mb-4 grid gap-2 md:flex md:items-center md:justify-between">
+          <div className="grid gap-2 md:flex">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="기사명/전화번호 검색" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:w-auto" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:w-auto">
               <option value="all">전체 상태</option>
               <option value="active">재직</option>
               <option value="leave">휴직</option>
               <option value="resigned">퇴사</option>
             </select>
           </div>
-          <Button onClick={() => { setEditing(null); setForm(buildFormState(null)); setOpen(true); }}>+ 기사 추가</Button>
+          <Button className="w-full md:w-auto" onClick={() => { setEditing(null); setForm(buildFormState(null)); setOpen(true); }}>+ 기사 추가</Button>
         </div>
 
         <DataList
@@ -149,34 +175,32 @@ export default function DriversPage() {
             {
               key: 'defaultRouteId',
               label: '노선',
-              render: (_, row) => {
-                const rowRouteIds = row.routeIds?.length ? row.routeIds : row.defaultRouteId ? [row.defaultRouteId] : [''];
-                return (
-                <div className="space-y-2">
-                  {rowRouteIds.map((routeId, idx) => {
-                    const selectedByOthers = new Set(rowRouteIds.filter((_, i) => i !== idx).filter(Boolean));
-                    const selectableRoutes = allRoutes.filter((route) => !selectedByOthers.has(route.id));
-                    const routeKey = `${row.id}-${idx}`;
-                    return (
-                    <div key={`${row.id}-${routeId || 'empty'}-${idx}`}>
-                      <select
-                        value={routeId}
-                        onChange={(e) => handleInlineRouteChange(row, idx, e.target.value)}
-                        disabled={Boolean(savingRouteByKey[routeKey])}
-                        className="block w-56 rounded-lg border border-input bg-background px-2 py-1 text-sm disabled:opacity-70"
-                      >
-                        <option value="">미지정</option>
-                        {selectableRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
-                      </select>
-                    </div>
-                    );
-                  })}
-                </div>
-                );
-              },
+              render: (_, row) => renderRouteSelector(row),
             },
             { key: 'status', label: '상태', render: (v) => <Badge variant={getDriverBadgeVariant(v)}>{getDriverStatusLabel(v)}</Badge> },
           ]}
+          mobileCardRender={(row) => (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">{row.name}</span>
+                </div>
+                <Badge variant={getDriverBadgeVariant(row.status)}>{getDriverStatusLabel(row.status)}</Badge>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">연락처</span>
+                <span className="text-sm text-foreground">{row.phone}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">노선</span>
+                <div>{renderRouteSelector(row)}</div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
+                <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'inactive' }); load(); toast.success('기사 비활성화 처리 완료'); }}>비활성화</Button>
+              </div>
+            </div>
+          )}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
