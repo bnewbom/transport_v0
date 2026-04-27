@@ -512,13 +512,12 @@ export default function DispatchesPage() {
             const run = runs.find((item) => item.dispatchId === d.id);
             const route = repositories.routes.getById(d.routeId);
             const routeName = route?.name ?? '-';
-            const routeLabel = route ? `${routeName}:[${getShiftTypeLabel(route.shiftType)}/${getCommuteTypeLabel(route.commuteType)}]` : routeName;
             const allowance = formatKRW(Number(run?.allowanceAmount ?? route?.baseAllowanceAmount ?? route?.baseRate ?? 0));
             return (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-muted-foreground">노선</span>
-                  <span className="text-right text-sm font-semibold text-foreground">{routeLabel}</span>
+                  <span className="text-right text-sm font-semibold text-foreground">{routeName}</span>
                 </div>
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-medium text-muted-foreground">기사</span>

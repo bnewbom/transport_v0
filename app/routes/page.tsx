@@ -236,9 +236,7 @@ export default function RoutesPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">노선</span>
-                <span className="text-right text-sm font-semibold text-foreground">
-                  {row.name}:[{getShiftTypeLabel(row.shiftType)}/{getCommuteTypeLabel(row.commuteType)}]
-                </span>
+                <span className="text-right text-sm font-semibold text-foreground">{row.name}</span>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">요일</span>
