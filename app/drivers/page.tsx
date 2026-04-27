@@ -151,7 +151,7 @@ export default function DriversPage() {
           <StatCard label="전체 기사" value={rows.length} />
           <StatCard label="재직" value={rows.filter((x) => x.status === 'active').length} />
           <StatCard label="휴직" value={rows.filter((x) => x.status === 'leave' || x.status === 'on-leave').length} />
-          <StatCard label="퇴사/비활성" value={rows.filter((x) => x.status === 'resigned' || x.status === 'inactive').length} />
+          <StatCard label="퇴사" value={rows.filter((x) => x.status === 'resigned').length} />
         </div>
 
         <div className="mb-4 grid gap-2 md:flex md:items-center md:justify-between">
@@ -198,14 +198,18 @@ export default function DriversPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-                <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'inactive' }); load(); toast.success('기사 비활성화 처리 완료'); }}>비활성화</Button>
+                {row.status !== 'resigned' && (
+                  <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+                )}
               </div>
             </div>
           )}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              {row.status !== 'resigned' && (
+                <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              )}
             </div>
           )}
         />
