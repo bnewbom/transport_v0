@@ -372,16 +372,6 @@ export default function DispatchesPage() {
           <div className="flex gap-2">
             <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="노선명/계획 기사 검색" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            <select value={dispatchShiftFilter} onChange={(e) => setDispatchShiftFilter(e.target.value as typeof dispatchShiftFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">주/야간 전체</option>
-              <option value="day">주간</option>
-              <option value="night">야간</option>
-            </select>
-            <select value={dispatchCommuteFilter} onChange={(e) => setDispatchCommuteFilter(e.target.value as typeof dispatchCommuteFilter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">출/퇴근 전체</option>
-              <option value="goWork">출근</option>
-              <option value="offWork">퇴근</option>
-            </select>
             {hasDispatchesForDate ? (
               <div className="flex items-center gap-2">
                 <Button variant={allConfirmedForDate ? 'destructive' : 'default'} onClick={confirmAllDispatches}>
@@ -408,7 +398,7 @@ export default function DispatchesPage() {
             + 수동 배차 추가
           </Button>
         </div>
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 hidden gap-2 md:flex">
           <Button variant={mobileFilterKey === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
           <Button variant={mobileFilterKey === 'night-off' ? 'default' : 'outline'} onClick={() => setCategoryFilter('night-off')}>야간/퇴근</Button>
           <Button variant={mobileFilterKey === 'day-go' ? 'default' : 'outline'} onClick={() => setCategoryFilter('day-go')}>주간/출근</Button>
