@@ -409,11 +409,11 @@ export default function DispatchesPage() {
           </Button>
         </div>
         <div className="mb-4 flex flex-wrap gap-2">
-          <Button variant={categoryFilter === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
-          <Button variant={categoryFilter === 'nightOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightOff')}>야간/퇴근</Button>
-          <Button variant={categoryFilter === 'dayGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayGo')}>주간/출근</Button>
-          <Button variant={categoryFilter === 'nightGo' ? 'default' : 'outline'} onClick={() => setCategoryFilter('nightGo')}>야간/출근</Button>
-          <Button variant={categoryFilter === 'dayOff' ? 'default' : 'outline'} onClick={() => setCategoryFilter('dayOff')}>주간/퇴근</Button>
+          <Button variant={mobileFilterKey === 'all' ? 'default' : 'outline'} onClick={() => setCategoryFilter('all')}>전체</Button>
+          <Button variant={mobileFilterKey === 'night-off' ? 'default' : 'outline'} onClick={() => setCategoryFilter('night-off')}>야간/퇴근</Button>
+          <Button variant={mobileFilterKey === 'day-go' ? 'default' : 'outline'} onClick={() => setCategoryFilter('day-go')}>주간/출근</Button>
+          <Button variant={mobileFilterKey === 'night-go' ? 'default' : 'outline'} onClick={() => setCategoryFilter('night-go')}>야간/출근</Button>
+          <Button variant={mobileFilterKey === 'day-off' ? 'default' : 'outline'} onClick={() => setCategoryFilter('day-off')}>주간/퇴근</Button>
         </div>
         
         <div className="mb-4 grid gap-2 md:hidden">
