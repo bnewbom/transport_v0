@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, Grid, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -19,11 +20,13 @@ const getItems = (payrollId: string) => repositories.payrollItems.getAll().filte
 type PayrollRow = Payroll & { driverName: string; driverPhone: string };
 
 export default function PayrollPage() {
+  const router = useRouter();
   const [month, setMonth] = React.useState(new Date().toISOString().slice(0, 7));
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'draft' | 'confirmed'>('all');
   const [rows, setRows] = React.useState<Payroll[]>([]);
   const [selected, setSelected] = React.useState<Payroll | null>(null);
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   const loadPayrollRows = React.useCallback(() => {
     setRows(repositories.payroll.getAll());
@@ -31,9 +34,16 @@ export default function PayrollPage() {
 
   const load = React.useCallback(() => setRows(repositories.payroll.getAll()), []);
   React.useEffect(() => {
+    if (!localStorage.getItem('auth')) {
+      router.replace('/login');
+      return;
+    }
+    setIsAuthorized(true);
     ensureSeedData();
     loadPayrollRows();
-  }, [loadPayrollRows]);
+  }, [router, loadPayrollRows]);
+
+  if (!isAuthorized) return null;
 
   const generate = () => {
     const company = repositories.company.getAll()[0];
