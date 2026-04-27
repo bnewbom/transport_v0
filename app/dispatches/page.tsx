@@ -509,15 +509,14 @@ export default function DispatchesPage() {
           ]}
           mobileCardRender={(d) => {
             const run = runs.find((item) => item.dispatchId === d.id);
-            const routeName = repositories.routes.getById(d.routeId)?.name ?? '-';
-            const allowance = formatKRW(Number(run?.allowanceAmount ?? repositories.routes.getById(d.routeId)?.baseAllowanceAmount ?? repositories.routes.getById(d.routeId)?.baseRate ?? 0));
+            const route = repositories.routes.getById(d.routeId);
+            const routeName = route?.name ?? '-';
+            const allowance = formatKRW(Number(run?.allowanceAmount ?? route?.baseAllowanceAmount ?? route?.baseRate ?? 0));
             return (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground">{routeName}</span>
-                  <Button size="sm" variant={run ? 'destructive' : 'default'} onClick={() => toggleRun(d)}>
-                    {run ? '운행 취소' : '운행 확정'}
-                  </Button>
+                  <span className="text-xs font-medium text-muted-foreground">노선</span>
+                  <span className="text-right text-sm font-semibold text-foreground">{routeName}</span>
                 </div>
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-medium text-muted-foreground">기사</span>
@@ -536,6 +535,11 @@ export default function DispatchesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-medium text-muted-foreground">수당</span>
                   <span className="text-sm text-foreground">{allowance}</span>
+                </div>
+                <div className="flex justify-end">
+                  <Button size="sm" variant={run ? 'destructive' : 'default'} onClick={() => toggleRun(d)}>
+                    {run ? '운행 취소' : '운행 확정'}
+                  </Button>
                 </div>
               </div>
             );

@@ -80,14 +80,11 @@ export default function ClientsPage() {
           mobileCardRender={(row) => (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">거래처</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">{row.name}</span>
+                  <Badge variant={getClientBadgeVariant(row.status)}>{getStatusLabel(row.status)}</Badge>
                 </div>
-                <Badge variant={getClientBadgeVariant(row.status)}>{getStatusLabel(row.status)}</Badge>
-              </div>
-              <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
-                  <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">연락처</span>
@@ -97,10 +94,14 @@ export default function ClientsPage() {
                 <span className="text-xs font-medium text-muted-foreground">주소</span>
                 <span className="text-right text-sm text-foreground">{row.address}</span>
               </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
+                <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
+              </div>
             </div>
           )}
           actions={(row) => (
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
               <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
             </div>

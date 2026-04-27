@@ -170,8 +170,36 @@ export default function PayrollPage() {
             { key: 'status', label: '상태', render: (value) => <Badge>{getPayrollStatusLabel(value)}</Badge> },
             { key: 'netAmount', label: '실수령액', render: (value) => formatKRW(Number(value)) },
           ]}
+          mobileCardRender={(row) => (
+            <div className="space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">기사명</span>
+                <span className="text-sm font-medium text-foreground">{row.driverName}</span>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">연락처</span>
+                <span className="text-sm font-medium text-foreground">{row.driverPhone}</span>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">상태</span>
+                <Badge>{getPayrollStatusLabel(row.status)}</Badge>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">실수령액</span>
+                <span className="text-sm font-medium text-foreground">{formatKRW(Number(row.netAmount))}</span>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button size="sm" variant="outline" onClick={() => setSelected(row)}>명세서 보기</Button>
+                {row.status === 'draft' ? (
+                  <Button size="sm" onClick={() => confirm(row)}>확정</Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => rollback(row)}>임시저장으로</Button>
+                )}
+              </div>
+            </div>
+          )}
           actions={(row) => (
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => setSelected(row)}>명세서 보기</Button>
               {row.status === 'draft' ? (
                 <Button size="sm" onClick={() => confirm(row)}>확정</Button>
