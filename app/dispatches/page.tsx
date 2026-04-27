@@ -14,10 +14,11 @@ import { repositories, recordChangeLog } from '@/lib/repository';
 import { Dispatch, Run } from '@/lib/schemas';
 import { formatDate, formatKRW } from '@/lib/formatters';
 import { useAppToast } from '@/components/crud/toast';
-import { dayToBit } from '@/lib/labels';
+import { dayToBit, getShiftTypeLabel } from '@/lib/labels';
 import { ensureSeedData } from '@/lib/seed';
 
 type DispatchCategoryFilter = 'all' | 'nightOff' | 'dayGo' | 'nightGo' | 'dayOff';
+const getCommuteTypeLabel = (commuteType: 'goWork' | 'offWork') => (commuteType === 'goWork' ? '출근' : '퇴근');
 
 export default function DispatchesPage() {
   const router = useRouter();
