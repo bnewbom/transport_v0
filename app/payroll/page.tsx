@@ -200,7 +200,7 @@ export default function PayrollPage() {
             </div>
           )}
           actions={(row) => (
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => setSelected(row)}>명세서 보기</Button>
               {row.status === 'draft' ? (
                 <Button size="sm" onClick={() => confirm(row)}>확정</Button>

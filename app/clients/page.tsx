@@ -102,7 +102,7 @@ export default function ClientsPage() {
             </div>
           )}
           actions={(row) => (
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
               <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
             </div>
