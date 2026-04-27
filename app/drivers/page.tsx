@@ -198,14 +198,18 @@ export default function DriversPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-                <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+                {row.status !== 'resigned' && (
+                  <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+                )}
               </div>
             </div>
           )}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              {row.status !== 'resigned' && (
+                <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              )}
             </div>
           )}
         />

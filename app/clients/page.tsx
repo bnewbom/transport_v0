@@ -48,6 +48,12 @@ export default function ClientsPage() {
     return bySearch && byStatus;
   });
 
+  const toggleClientStatus = (row: Client) => {
+    const nextStatus: Client['status'] = row.status === 'active' ? 'inactive' : 'active';
+    repositories.clients.update(row.id, { status: nextStatus });
+    load();
+  };
+
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.clients')} />}>
       <PageContent>
@@ -97,14 +103,14 @@ export default function ClientsPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
-                <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
+                <Button size="sm" variant={row.status === 'active' ? 'destructive' : 'default'} onClick={() => toggleClientStatus(row)}>{row.status === 'active' ? '비활성화' : '활성'}</Button>
               </div>
             </div>
           )}
           actions={(row) => (
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm({ name: row.name, phone: row.phone, address: row.address, status: row.status }); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="outline" onClick={() => { repositories.clients.update(row.id, { status: 'inactive' }); load(); }}>비활성화</Button>
+              <Button size="sm" variant={row.status === 'active' ? 'destructive' : 'default'} onClick={() => toggleClientStatus(row)}>{row.status === 'active' ? '비활성화' : '활성'}</Button>
             </div>
           )}
         />
