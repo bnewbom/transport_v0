@@ -79,8 +79,6 @@ export default function DriversPage() {
     load();
   }, [router, load]);
 
-  if (!isAuthorized) return null;
-
   const save = () => {
     const normalizedRouteIds = Array.from(new Set(form.routeIds.map((id) => id.trim()).filter(Boolean)));
     const payload = {
@@ -153,6 +151,8 @@ export default function DriversPage() {
       </div>
     );
   }, [allRoutes, savingRouteByKey]);
+
+  if (!isAuthorized) return null;
 
   return (
     <SidebarLayout sidebar={<Sidebar items={navItems} title={t('common.appName')} />} header={<Header title={t('nav.drivers')} />}>
