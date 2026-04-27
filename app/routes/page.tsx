@@ -234,7 +234,12 @@ export default function RoutesPage() {
           ]}
           mobileCardRender={(row) => (
             <div className="space-y-3">
-              <div className="text-sm font-semibold text-foreground">{row.name}</div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">노선</span>
+                <span className="text-right text-sm font-semibold text-foreground">
+                  {row.name}:[{getShiftTypeLabel(row.shiftType)}/{getCommuteTypeLabel(row.commuteType)}]
+                </span>
+              </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">요일</span>
                 <span className="text-sm text-foreground">{weekdayMaskToLabels(Number(row.weekdayMask))}</span>
