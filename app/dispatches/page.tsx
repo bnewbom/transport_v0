@@ -34,6 +34,7 @@ export default function DispatchesPage() {
   const [manualDriverId, setManualDriverId] = React.useState('');
   const [manualDriverCustomName, setManualDriverCustomName] = React.useState('');
   const [driverRequiredDispatchIds, setDriverRequiredDispatchIds] = React.useState<string[]>([]);
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   const load = React.useCallback(() => {
     setRows([...repositories.dispatches.getAll()]);
@@ -41,10 +42,16 @@ export default function DispatchesPage() {
   }, []);
 
   React.useEffect(() => {
-    if (!localStorage.getItem('auth')) router.push('/login');
+    if (!localStorage.getItem('auth')) {
+      router.replace('/login');
+      return;
+    }
+    setIsAuthorized(true);
     ensureSeedData();
     load();
   }, [router, load]);
+
+  if (!isAuthorized) return null;
 
   const isMonthLocked = (date: string) => repositories.payroll.getAll().some((p) => p.settlementMonth === date.slice(0, 7) && p.status === 'confirmed');
 

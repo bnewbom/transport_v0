@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -27,6 +28,7 @@ const getDriverBadgeVariant = (status: Driver['status']): 'success' | 'warning' 
 };
 
 export default function DriversPage() {
+  const router = useRouter();
   type DriverFormState = {
     name: string;
     phone: string;
@@ -59,6 +61,7 @@ export default function DriversPage() {
   const [statusFilter, setStatusFilter] = React.useState<'all' | Driver['status']>('all');
   const [savingRouteByKey, setSavingRouteByKey] = React.useState<Record<string, boolean>>({});
   const [form, setForm] = React.useState<DriverFormState>(buildFormState(null));
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
   const activeRoutes = React.useMemo(() => repositories.routes.getAll().filter((r) => r.status === 'active'), [rows]);
@@ -67,9 +70,16 @@ export default function DriversPage() {
   }, []);
 
   React.useEffect(() => {
+    if (!localStorage.getItem('auth')) {
+      router.replace('/login');
+      return;
+    }
+    setIsAuthorized(true);
     ensureSeedData();
     load();
-  }, [load]);
+  }, [router, load]);
+
+  if (!isAuthorized) return null;
 
   const save = () => {
     const normalizedRouteIds = Array.from(new Set(form.routeIds.map((id) => id.trim()).filter(Boolean)));
@@ -151,7 +161,7 @@ export default function DriversPage() {
           <StatCard label="전체 기사" value={rows.length} />
           <StatCard label="재직" value={rows.filter((x) => x.status === 'active').length} />
           <StatCard label="휴직" value={rows.filter((x) => x.status === 'leave' || x.status === 'on-leave').length} />
-          <StatCard label="퇴사/비활성" value={rows.filter((x) => x.status === 'resigned' || x.status === 'inactive').length} />
+          <StatCard label="퇴사" value={rows.filter((x) => x.status === 'resigned').length} />
         </div>
 
         <div className="mb-4 grid gap-2 md:flex md:items-center md:justify-between">
@@ -198,14 +208,18 @@ export default function DriversPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-                <Button size="sm" variant="outline" onClick={() => { repositories.drivers.update(row.id, { status: 'inactive' }); load(); toast.success('기사 비활성화 처리 완료'); }}>비활성화</Button>
+                {row.status !== 'resigned' && (
+                  <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+                )}
               </div>
             </div>
           )}
           actions={(row) => (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => { setEditing(row); setForm(buildFormState(row)); setOpen(true); }}>수정</Button>
-              <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              {row.status !== 'resigned' && (
+                <Button size="sm" variant="destructive" onClick={() => { repositories.drivers.update(row.id, { status: 'resigned', resignedAt: new Date().toISOString().slice(0, 10) }); load(); toast.success('기사 퇴사 처리 완료'); }}>퇴사</Button>
+              )}
             </div>
           )}
         />
