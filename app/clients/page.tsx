@@ -26,7 +26,7 @@ export default function ClientsPage() {
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'active' | 'inactive'>('all');
   const [form, setForm] = React.useState({ name: '', phone: '', address: '', status: 'active' as Client['status'] });
 
-  const load = React.useCallback(() => setRows(repositories.clients.getAll()), []);
+  const load = React.useCallback(() => setRows([...repositories.clients.getAll()]), []);
 
   React.useEffect(() => {
     ensureSeedData();
