@@ -71,6 +71,8 @@ export default function ClientsPage() {
 
         <DataList
           data={filtered}
+          actionsAlign="end"
+          actionsColumnClassName="w-[1%] whitespace-nowrap"
           columns={[
             { key: 'name', label: '거래처명' },
             { key: 'phone', label: '연락처' },

@@ -20,6 +20,8 @@ interface DataListProps<T extends { id: string }> {
   onRowClick?: (item: T) => void;
   actions?: (item: T) => React.ReactNode;
   actionsLabel?: string;
+  actionsAlign?: 'start' | 'end';
+  actionsColumnClassName?: string;
   mobileCardRender?: (item: T) => React.ReactNode;
   className?: string;
 }
@@ -32,6 +34,8 @@ export function DataList<T extends { id: string }>({
   onRowClick,
   actions,
   actionsLabel = t('common.actions'),
+  actionsAlign = 'start',
+  actionsColumnClassName,
   mobileCardRender,
   className,
 }: DataListProps<T>) {
@@ -79,7 +83,17 @@ export function DataList<T extends { id: string }>({
                   {col.sortable && <span className="ml-1 text-xs opacity-50">↕</span>}
                 </th>
               ))}
-              {actions && <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">{actionsLabel}</th>}
+              {actions && (
+                <th
+                  className={cn(
+                    'px-4 py-3 text-sm font-semibold text-foreground',
+                    actionsAlign === 'end' ? 'text-right' : 'text-left',
+                    actionsColumnClassName
+                  )}
+                >
+                  {actionsLabel}
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -95,7 +109,7 @@ export function DataList<T extends { id: string }>({
                   </td>
                 ))}
                 {actions && (
-                  <td className="px-4 py-3 text-sm">
+                  <td className={cn('px-4 py-3 text-sm', actionsAlign === 'end' ? 'text-right' : 'text-left', actionsColumnClassName)}>
                     <div onClick={(e) => e.stopPropagation()}>
                       {actions(item)}
                     </div>
