@@ -182,10 +182,11 @@ export default function DriversPage() {
           mobileCardRender={(row) => (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">이름</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">{row.name}</span>
+                  <Badge variant={getDriverBadgeVariant(row.status)}>{getDriverStatusLabel(row.status)}</Badge>
                 </div>
-                <Badge variant={getDriverBadgeVariant(row.status)}>{getDriverStatusLabel(row.status)}</Badge>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-muted-foreground">연락처</span>
