@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -90,6 +91,7 @@ const normalizeRouteEntity = (route: Route): Route => {
 };
 
 export default function RoutesPage() {
+  const router = useRouter();
   const [rows, setRows] = React.useState<Route[]>([]);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Route | null>(null);
@@ -99,6 +101,7 @@ export default function RoutesPage() {
   const [dayFilter, setDayFilter] = React.useState<'all' | '0' | '1' | '2' | '3' | '4' | '5' | '6'>('all');
   const [selectedDays, setSelectedDays] = React.useState<number[]>(ALL_DAYS);
   const [form, setForm] = React.useState<RouteForm>(createRouteFormDefaults());
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   const load = React.useCallback(() => {
     const current = repositories.routes.getAll();
@@ -133,9 +136,16 @@ export default function RoutesPage() {
   }, []);
 
   React.useEffect(() => {
+    if (!localStorage.getItem('auth')) {
+      router.replace('/login');
+      return;
+    }
+    setIsAuthorized(true);
     ensureSeedData();
     load();
-  }, [load]);
+  }, [router, load]);
+
+  if (!isAuthorized) return null;
 
   const save = () => {
     const existingNames = new Set(rows.filter((row) => row.id !== editing?.id).map((row) => row.name));

@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
 import { PageContent, StatCard } from '@/components/layout-shell';
 import { DataList, Badge } from '@/components/data-list';
@@ -27,6 +28,7 @@ const getDriverBadgeVariant = (status: Driver['status']): 'success' | 'warning' 
 };
 
 export default function DriversPage() {
+  const router = useRouter();
   type DriverFormState = {
     name: string;
     phone: string;
@@ -59,6 +61,7 @@ export default function DriversPage() {
   const [statusFilter, setStatusFilter] = React.useState<'all' | Driver['status']>('all');
   const [savingRouteByKey, setSavingRouteByKey] = React.useState<Record<string, boolean>>({});
   const [form, setForm] = React.useState<DriverFormState>(buildFormState(null));
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   const allRoutes = React.useMemo(() => repositories.routes.getAll(), [rows]);
   const activeRoutes = React.useMemo(() => repositories.routes.getAll().filter((r) => r.status === 'active'), [rows]);
@@ -67,9 +70,16 @@ export default function DriversPage() {
   }, []);
 
   React.useEffect(() => {
+    if (!localStorage.getItem('auth')) {
+      router.replace('/login');
+      return;
+    }
+    setIsAuthorized(true);
     ensureSeedData();
     load();
-  }, [load]);
+  }, [router, load]);
+
+  if (!isAuthorized) return null;
 
   const save = () => {
     const normalizedRouteIds = Array.from(new Set(form.routeIds.map((id) => id.trim()).filter(Boolean)));
