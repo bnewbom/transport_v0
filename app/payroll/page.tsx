@@ -164,7 +164,6 @@ export default function PayrollPage() {
 
         <DataList<PayrollRow>
           data={filteredRows}
-          actionsAlign="end"
           actionsColumnClassName="w-[1%] whitespace-nowrap"
           columns={[
             { key: 'driverName', label: '기사명' },
