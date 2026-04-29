@@ -50,6 +50,7 @@ export const RouteSchema = z.object({
   shiftType: z.enum(['day', 'night']).default('day'),
   commuteType: z.enum(['goWork', 'offWork']).default('goWork'),
   baseAllowanceAmount: z.number().nonnegative().default(0),
+  routeSupplyAmount: z.number().nonnegative().default(0),
   effectiveFrom: z.any().optional(),
   effectiveTo: z.any().optional(),
 });
