@@ -134,7 +134,7 @@ interface SidebarLayoutProps {
 export function SidebarLayout({ sidebar, header, children }: SidebarLayoutProps) {
   const pathname = usePathname();
   const bottomNavItems = [
-    { href: '/clients', label: '거래처' },
+    { href: '/dashboard', label: '홈' },
     { href: '/drivers', label: '기사' },
     { href: '/routes', label: '노선' },
     { href: '/dispatches', label: '배차' },
