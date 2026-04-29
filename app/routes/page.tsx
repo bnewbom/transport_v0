@@ -240,6 +240,7 @@ export default function RoutesPage() {
 
         <DataList
           data={filtered}
+          actionsColumnClassName="w-[1%] whitespace-nowrap"
           columns={[
             { key: 'name', label: '노선명' },
             { key: 'weekdayMask', label: '요일', render: (v) => weekdayMaskToLabels(Number(v)) },
@@ -279,7 +280,7 @@ export default function RoutesPage() {
             </div>
           )}
           actions={(row) => (
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <Button size="sm" variant="outline" onClick={() => {
                 setEditing(row);
                 const normalized = normalizeRouteForm(row);
