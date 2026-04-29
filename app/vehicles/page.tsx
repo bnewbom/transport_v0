@@ -111,6 +111,32 @@ export default function VehiclesPage() {
             { key: 'driverId', label: '기사명', render: (v) => driverMap.get(v) ?? '-' },
             { key: 'period', label: '기간' },
           ]}
+          mobileCardRender={(row) => (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">차종</span><span>{row.type}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">최초 등록일</span><span>{row.firstRegisteredAt}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">검사 일정</span><span>{row.inspectionSchedule}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">운행구간</span><span>{routeMap.get(row.routeId) ?? '-'}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">기사명</span><span>{driverMap.get(row.driverId) ?? '-'}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">기간</span><span>{row.period}</span></div>
+              <div className="flex justify-end pt-1">
+                <Button size="sm" variant="outline" onClick={() => {
+                  setEditing(row);
+                  setForm({
+                    type: row.type,
+                    firstRegisteredAt: row.firstRegisteredAt,
+                    inspectionSchedule: row.inspectionSchedule,
+                    routeId: row.routeId,
+                    driverId: row.driverId,
+                    period: row.period,
+                  });
+                  setIsOpen(true);
+                }}>
+                  수정
+                </Button>
+              </div>
+            </div>
+          )}
           actions={(row) => (
             <Button
               size="sm"
