@@ -3,6 +3,7 @@ export const ko = {
     dashboard: '대시보드',
     clients: '거래처',
     drivers: '기사',
+    vehicles: '차량',
     routes: '노선',
     dispatches: '배차',
     operations: '운영 로그',

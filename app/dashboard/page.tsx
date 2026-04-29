@@ -123,6 +123,14 @@ export default function DashboardPage() {
               <p className="mt-1 text-sm text-muted-foreground">거래처 관리</p>
             </Link>
             <Link
+              href="/vehicles"
+              className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
+            >
+              <div className="mb-3 text-4xl">🚌</div>
+              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">차량</h4>
+              <p className="mt-1 text-sm text-muted-foreground">차량 관리</p>
+            </Link>
+            <Link
               href="/drivers"
               className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5"
             >
