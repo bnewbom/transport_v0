@@ -26,6 +26,7 @@ type RouteForm = {
   shiftType: Route['shiftType'];
   commuteType: Route['commuteType'];
   baseAllowanceAmount: number;
+  routeSupplyAmount: number;
   weekdayMask: number;
   status: Route['status'];
 };
@@ -39,6 +40,7 @@ const createRouteFormDefaults = (): RouteForm => ({
   shiftType: 'day',
   commuteType: 'goWork',
   baseAllowanceAmount: 0,
+  routeSupplyAmount: 0,
   weekdayMask: 127,
   status: 'active',
 });
@@ -76,6 +78,7 @@ const normalizeRouteForm = (route?: Partial<Route> | null): RouteForm => {
     shiftType: route?.shiftType ?? defaults.shiftType,
     commuteType: route?.commuteType ?? defaults.commuteType,
     baseAllowanceAmount: Number(route?.baseAllowanceAmount ?? defaults.baseAllowanceAmount),
+    routeSupplyAmount: Number(route?.routeSupplyAmount ?? defaults.routeSupplyAmount),
     weekdayMask: Number(route?.weekdayMask ?? defaults.weekdayMask),
     status: route?.status ?? defaults.status,
   };
@@ -114,6 +117,7 @@ export default function RoutesPage() {
       usedNames.add(uniqueName);
       if (
         original.baseAllowanceAmount !== row.baseAllowanceAmount ||
+        original.routeSupplyAmount !== row.routeSupplyAmount ||
         original.weekdayMask !== row.weekdayMask ||
         original.shiftType !== row.shiftType ||
         original.commuteType !== row.commuteType ||
@@ -122,6 +126,7 @@ export default function RoutesPage() {
       ) {
         repositories.routes.update(row.id, {
           baseAllowanceAmount: row.baseAllowanceAmount,
+          routeSupplyAmount: row.routeSupplyAmount,
           weekdayMask: row.weekdayMask,
           shiftType: row.shiftType,
           commuteType: row.commuteType,
@@ -240,7 +245,8 @@ export default function RoutesPage() {
             { key: 'weekdayMask', label: '요일', render: (v) => weekdayMaskToLabels(Number(v)) },
             { key: 'shiftType', label: '주/야간', render: (v) => <Badge variant={getShiftBadgeVariant(v as Route['shiftType'])}>{getShiftTypeLabel(v)}</Badge> },
             { key: 'commuteType', label: '출/퇴근', render: (v) => <Badge variant={getCommuteBadgeVariant(v as Route['commuteType'])}>{getCommuteTypeLabel(v as Route['commuteType'])}</Badge> },
-            { key: 'baseAllowanceAmount', label: '기본 수당(1회)', render: (v) => formatKRW(Number(v)) },
+            { key: 'baseAllowanceAmount', label: '운행 수당', render: (v) => formatKRW(Number(v)) },
+            { key: 'routeSupplyAmount', label: '노선별 공급가액', render: (v) => formatKRW(Number(v)) },
           ]}
           mobileCardRender={(row) => (
             <div className="space-y-3">
@@ -253,8 +259,12 @@ export default function RoutesPage() {
                 <span className="text-sm text-foreground">{weekdayMaskToLabels(Number(row.weekdayMask))}</span>
               </div>
               <div className="flex items-start justify-between gap-3">
-                <span className="text-xs font-medium text-muted-foreground">기본 수당(1회)</span>
+                <span className="text-xs font-medium text-muted-foreground">운행 수당</span>
                 <span className="text-sm text-foreground">{formatKRW(Number(row.baseAllowanceAmount))}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-medium text-muted-foreground">노선별 공급가액</span>
+                <span className="text-sm text-foreground">{formatKRW(Number(row.routeSupplyAmount))}</span>
               </div>
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => {
@@ -295,7 +305,8 @@ export default function RoutesPage() {
           </FormField>
           <FormField label="주/야간" required><select value={form.shiftType} onChange={(e) => setForm({ ...form, shiftType: e.target.value as Route['shiftType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="day">주간</option><option value="night">야간</option></select></FormField>
           <FormField label="출근/퇴근" required><select value={form.commuteType} onChange={(e) => setForm({ ...form, commuteType: e.target.value as Route['commuteType'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="goWork">출근</option><option value="offWork">퇴근</option></select></FormField>
-          <FormField label="기본 수당(1회)"><input type="number" value={form.baseAllowanceAmount ?? 0} onChange={(e) => setForm({ ...form, baseAllowanceAmount: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="운행 수당"><input type="number" value={form.baseAllowanceAmount ?? 0} onChange={(e) => setForm({ ...form, baseAllowanceAmount: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
+          <FormField label="노선별 공급가액"><input type="number" value={form.routeSupplyAmount ?? 0} onChange={(e) => setForm({ ...form, routeSupplyAmount: e.target.value === '' ? 0 : Number(e.target.value) })} className="w-full rounded-lg border border-input px-3 py-2 text-sm" /></FormField>
           <FormField label="상태"><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Route['status'] })} className="w-full rounded-lg border border-input px-3 py-2 text-sm"><option value="active">활성</option><option value="inactive">비활성</option></select></FormField>
         </ModalForm>
       </PageContent>
