@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
-const STATUS_LIST = ['off', 'off', 'work', 'work', 'work', 'swap', 'off'] as const
+type WorkStatus = 'work' | 'off' | 'swap'
 
 const STATUS_MAP = {
   work: { label: '출근', className: 'bg-emerald-100 text-emerald-800' },
@@ -23,19 +23,54 @@ export default function UserCalendarPage() {
   const leading = Array.from({ length: firstDay }, () => null)
   const cells = [...leading, ...days]
 
-  const statuses = days.map((day) => STATUS_LIST[(day - 1) % STATUS_LIST.length])
+  const statuses = useMemo(() => {
+    const monthKey = year * 100 + month
+    const offCount = monthKey % 2 === 0 ? 2 : 3
+    const swapCount = monthKey % 3 === 0 ? 3 : 2
+
+    const statusByDay = new Array<WorkStatus>(daysInMonth).fill('work')
+    const used = new Set<number>()
+
+    const pickDays = (count: number, seed: number) => {
+      const picked: number[] = []
+      let cursor = seed
+      while (picked.length < count) {
+        cursor = (cursor * 7 + 11) % daysInMonth
+        if (!used.has(cursor)) {
+          used.add(cursor)
+          picked.push(cursor)
+        }
+      }
+      return picked
+    }
+
+    pickDays(offCount, month + 1).forEach((idx) => {
+      statusByDay[idx] = 'off'
+    })
+    pickDays(swapCount, year % 17).forEach((idx) => {
+      statusByDay[idx] = 'swap'
+    })
+
+    return statusByDay
+  }, [daysInMonth, month, year])
   const totalWorkDays = statuses.filter((day) => day === 'work').length
   const allowance = totalWorkDays * 120000
 
   return (
     <main className="min-h-screen bg-white px-4 py-6 pb-24">
       <div className="flex items-center justify-between">
-        <button className="px-2 py-1 text-xl" onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}>
-          &lt;
+        <button
+          className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700"
+          onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
+        >
+          이전 달
         </button>
         <h1 className="text-xl font-semibold text-slate-900 text-center">{month + 1}월 근무표</h1>
-        <button className="px-2 py-1 text-xl" onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}>
-          &gt;
+        <button
+          className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700"
+          onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
+        >
+          다음 달
         </button>
       </div>
 
@@ -48,7 +83,7 @@ export default function UserCalendarPage() {
       <div className="mt-2 grid grid-cols-7 gap-2 text-center text-xs font-medium">
         {cells.map((day, idx) => {
           if (!day) return <div key={`empty-${idx}`} />
-          const style = STATUS_MAP[STATUS_LIST[(day - 1) % STATUS_LIST.length]]
+          const style = STATUS_MAP[statuses[day - 1]]
           return (
             <div key={day} className={`px-1 py-2 ${style.className}`}>
               <p className="text-sm font-semibold">{day}</p>

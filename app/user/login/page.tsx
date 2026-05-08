@@ -45,11 +45,11 @@ export default function UserLoginPage() {
               setError('')
             }}
             placeholder="핸드폰 번호 입력"
-            className="h-12 w-full border border-slate-300 px-4 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            className="h-12 w-full rounded-lg border border-slate-300 px-4 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
           {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
 
-          <button type="submit" className="h-12 w-full bg-blue-600 text-base font-semibold text-white transition hover:bg-blue-700">
+          <button type="submit" className="h-12 w-full rounded-lg bg-blue-600 text-base font-semibold text-white transition hover:bg-blue-700">
             로그인
           </button>
         </form>
