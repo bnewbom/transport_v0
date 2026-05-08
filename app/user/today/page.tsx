@@ -26,9 +26,9 @@ export default function UserTodayPage() {
       <button
         onClick={() => setCheckedIn(true)}
         disabled={checkedIn}
-        className="mt-6 h-12 w-full bg-emerald-600 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+        className="mt-6 h-12 w-full rounded-lg bg-emerald-600 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
       >
-        {checkedIn ? '출근 확인 완료' : '확인'}
+        {checkedIn ? '출근 확인 완료' : '출근 확인'}
       </button>
     </main>
   )
