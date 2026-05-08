@@ -2,10 +2,10 @@
 
 import { repositories } from '@/lib/repository';
 
-const SEED_KEY = 'transport_v0_seed_v4';
+const SEED_KEY = 'transport_v0_seed_v5';
 const RESET_KEY = SEED_KEY; // backward compatibility for legacy references
 const SEED_VERSION_KEY = 'transport_v0_seed_version';
-const SEED_VERSION = 'v4';
+const SEED_VERSION = 'v5';
 const now = () => new Date().toISOString();
 
 const clearSeededData = () => {
@@ -83,6 +83,7 @@ const driverSeeds = [
   { name: '정경덕', phone: '01092499833', routeName: '동탄1-동탄센터:[야간/출근]' },
   { name: '조홍규', phone: '01074901148', routeName: '사당-동탄센터:[야간/출근]' },
   { name: '최도석', phone: '01089816727', routeName: '호매실-동탄센터:[야간/출근]' },
+  { name: '최봉혁', phone: '01036859711', routeName: null },
 ] as const;
 
 const parseLocations = (routeName: string) => {
