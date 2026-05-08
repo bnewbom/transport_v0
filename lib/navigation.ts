@@ -16,8 +16,4 @@ export const navItems: NavItem[] = [
   { label: t('nav.routes'), href: '/routes', icon: '🗺' },
   { label: t('nav.dispatches'), href: '/dispatches', icon: '📋' },
   { label: t('nav.payroll'), href: '/payroll', icon: '💳' },
-  { label: t('nav.operations'), href: '/operations', icon: '⚙️', disabled: true, badge: '준비중' },
-  { label: t('nav.finance'), href: '/finance', icon: '💰', disabled: true, badge: '준비중' },
-  { label: t('nav.reports'), href: '/reports', icon: '📈', disabled: true, badge: '준비중' },
-  { label: t('nav.settings'), href: '/settings', icon: '⚙️', disabled: true, badge: '준비중' },
 ];

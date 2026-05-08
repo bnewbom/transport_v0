@@ -15,23 +15,21 @@ import { ensureSeedData } from '@/lib/seed';
 
 type VehicleRow = {
   id: string;
-  type: string;
+  vehicleNumber: string;
   firstRegisteredAt: string;
   inspectionSchedule: string;
   routeId: string;
   driverId: string;
-  period: string;
 };
 
 type VehicleForm = Omit<VehicleRow, 'id'>;
 
 const emptyForm: VehicleForm = {
-  type: '',
+  vehicleNumber: '',
   firstRegisteredAt: '',
   inspectionSchedule: '',
   routeId: '',
   driverId: '',
-  period: '',
 };
 
 export default function VehiclesPage() {
@@ -59,12 +57,11 @@ export default function VehiclesPage() {
     setRows([
       {
         id: 'vehicle-1',
-        type: '45인승 통근버스',
+        vehicleNumber: '서울 70바 1234',
         firstRegisteredAt: '2023-03-15',
         inspectionSchedule: '2026-06-05',
         routeId: repositories.routes.getAll()[0]?.id ?? '',
         driverId: repositories.drivers.getAll()[0]?.id ?? '',
-        period: '2026-04-01 ~ 2026-12-31',
       },
     ]);
   }, [router]);
@@ -75,7 +72,7 @@ export default function VehiclesPage() {
     const q = search.toLowerCase();
     const routeName = routeMap.get(row.routeId) ?? '';
     const driverName = driverMap.get(row.driverId) ?? '';
-    return row.type.toLowerCase().includes(q) || routeName.toLowerCase().includes(q) || driverName.toLowerCase().includes(q);
+    return row.vehicleNumber.toLowerCase().includes(q) || routeName.toLowerCase().includes(q) || driverName.toLowerCase().includes(q);
   });
 
   const saveVehicle = () => {
@@ -97,38 +94,35 @@ export default function VehiclesPage() {
         </div>
 
         <div className="mb-4 grid gap-2 md:flex md:items-center md:justify-between">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="차종/운행구간/기사명 검색" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:w-80" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="차량번호/노선/기사명 검색" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:w-80" />
           <Button className="w-full md:w-auto" onClick={() => { setEditing(null); setForm(emptyForm); setIsOpen(true); }}>+ 차량 추가</Button>
         </div>
 
         <DataList
           data={filtered}
           columns={[
-            { key: 'type', label: '차종' },
+            { key: 'vehicleNumber', label: '차량번호' },
             { key: 'firstRegisteredAt', label: '최초 등록일' },
             { key: 'inspectionSchedule', label: '검사 일정' },
-            { key: 'routeId', label: '운행구간', render: (v) => routeMap.get(v) ?? '-' },
+            { key: 'routeId', label: '노선', render: (v) => routeMap.get(v) ?? '-' },
             { key: 'driverId', label: '기사명', render: (v) => driverMap.get(v) ?? '-' },
-            { key: 'period', label: '기간' },
           ]}
           mobileCardRender={(row) => (
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">차종</span><span>{row.type}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">차량번호</span><span>{row.vehicleNumber}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">최초 등록일</span><span>{row.firstRegisteredAt}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">검사 일정</span><span>{row.inspectionSchedule}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">운행구간</span><span>{routeMap.get(row.routeId) ?? '-'}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">노선</span><span>{routeMap.get(row.routeId) ?? '-'}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">기사명</span><span>{driverMap.get(row.driverId) ?? '-'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">기간</span><span>{row.period}</span></div>
               <div className="flex justify-end pt-1">
                 <Button size="sm" variant="outline" onClick={() => {
                   setEditing(row);
                   setForm({
-                    type: row.type,
+                    vehicleNumber: row.vehicleNumber,
                     firstRegisteredAt: row.firstRegisteredAt,
                     inspectionSchedule: row.inspectionSchedule,
                     routeId: row.routeId,
                     driverId: row.driverId,
-                    period: row.period,
                   });
                   setIsOpen(true);
                 }}>
@@ -144,12 +138,11 @@ export default function VehiclesPage() {
               onClick={() => {
                 setEditing(row);
                 setForm({
-                  type: row.type,
+                  vehicleNumber: row.vehicleNumber,
                   firstRegisteredAt: row.firstRegisteredAt,
                   inspectionSchedule: row.inspectionSchedule,
                   routeId: row.routeId,
                   driverId: row.driverId,
-                  period: row.period,
                 });
                 setIsOpen(true);
               }}
@@ -160,10 +153,10 @@ export default function VehiclesPage() {
         />
 
         <ModalForm isOpen={isOpen} onOpenChange={setIsOpen} title={editing ? '차량 수정' : '차량 추가'} onSubmit={saveVehicle}>
-          <FormField label="차종" required><input className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))} /></FormField>
+          <FormField label="차량번호" required><input className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.vehicleNumber} onChange={(e) => setForm((prev) => ({ ...prev, vehicleNumber: e.target.value }))} /></FormField>
           <FormField label="최초 등록일" required><input type="date" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.firstRegisteredAt} onChange={(e) => setForm((prev) => ({ ...prev, firstRegisteredAt: e.target.value }))} /></FormField>
           <FormField label="검사 일정" required><input type="date" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.inspectionSchedule} onChange={(e) => setForm((prev) => ({ ...prev, inspectionSchedule: e.target.value }))} /></FormField>
-          <FormField label="운행구간" required>
+          <FormField label="노선" required>
             <select className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.routeId} onChange={(e) => setForm((prev) => ({ ...prev, routeId: e.target.value }))}>
               <option value="">노선 선택</option>
               {allRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
@@ -175,7 +168,6 @@ export default function VehiclesPage() {
               {allDrivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
             </select>
           </FormField>
-          <FormField label="기간" required><input className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.period} onChange={(e) => setForm((prev) => ({ ...prev, period: e.target.value }))} placeholder="예: 2026-04-01 ~ 2026-12-31" /></FormField>
         </ModalForm>
       </PageContent>
     </SidebarLayout>
