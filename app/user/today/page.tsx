@@ -19,19 +19,17 @@ export default function UserTodayPage() {
   const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.')
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-8">
-      <section className="mx-auto w-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-lg font-semibold text-slate-700">운행 날짜 {today}</h1>
-        <p className="mt-5 rounded-xl bg-slate-100 px-4 py-3 text-base font-medium text-slate-900">{TODAY_ROUTE}</p>
+    <main className="min-h-screen bg-white px-6 py-8 pb-24">
+      <h1 className="text-lg font-semibold text-slate-700">운행 날짜 {today}</h1>
+      <p className="mt-5 px-2 py-3 text-base font-medium text-slate-900">{TODAY_ROUTE}</p>
 
-        <button
-          onClick={() => setCheckedIn(true)}
-          disabled={checkedIn}
-          className="mt-6 h-12 w-full rounded-xl bg-emerald-600 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
-        >
-          {checkedIn ? '출근 확인 완료' : '확인'}
-        </button>
-      </section>
+      <button
+        onClick={() => setCheckedIn(true)}
+        disabled={checkedIn}
+        className="mt-6 h-12 w-full bg-emerald-600 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+      >
+        {checkedIn ? '출근 확인 완료' : '확인'}
+      </button>
     </main>
   )
 }

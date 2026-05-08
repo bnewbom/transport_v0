@@ -31,8 +31,8 @@ export default function UserLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-6 py-10">
-      <section className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 py-10">
+      <section className="w-full max-w-sm p-6">
         <h1 className="text-center text-2xl font-semibold text-slate-900">기사 로그인</h1>
         <p className="mt-2 text-center text-sm text-slate-500">등록된 번호로 간편 로그인</p>
 
@@ -45,14 +45,11 @@ export default function UserLoginPage() {
               setError('')
             }}
             placeholder="핸드폰 번호 입력"
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            className="h-12 w-full border border-slate-300 px-4 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
           {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
 
-          <button
-            type="submit"
-            className="h-12 w-full rounded-xl bg-blue-600 text-base font-semibold text-white transition hover:bg-blue-700"
-          >
+          <button type="submit" className="h-12 w-full bg-blue-600 text-base font-semibold text-white transition hover:bg-blue-700">
             로그인
           </button>
         </form>
