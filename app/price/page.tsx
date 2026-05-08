@@ -1,19 +1,24 @@
+'use client';
+
 import { CheckCircle2, Headset, Send, Settings, ShieldCheck, Star, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 type Plan = {
+  key: 'lite' | 'standard' | 'pro';
   name: string;
   description: string;
   monthlyPrice: string;
   capacity: string;
   features: string[];
-  highlighted?: boolean;
+  recommended?: boolean;
   accent: 'blue' | 'green';
   icon: ReactNode;
 };
 
 const plans: Plan[] = [
   {
+    key: 'lite',
     name: '라이트',
     description: '기본 관리가 필요한 소규모 팀',
     monthlyPrice: '월 20만원',
@@ -23,16 +28,18 @@ const plans: Plan[] = [
     icon: <Send className="h-8 w-8 text-blue-500" />,
   },
   {
+    key: 'standard',
     name: '스탠다드',
     description: '운영 효율을 높이고 싶은 팀',
     monthlyPrice: '월 40만원',
     capacity: '기사 최대 50명',
     features: ['Lite 기능 포함', '기사 출근웹', '근태관리'],
-    highlighted: true,
+    recommended: true,
     accent: 'blue',
     icon: <Star className="h-8 w-8 fill-blue-500 text-blue-500" />,
   },
   {
+    key: 'pro',
     name: '프로',
     description: '체계적인 운영 관리가 필요한 팀',
     monthlyPrice: '월 70만원',
@@ -44,24 +51,14 @@ const plans: Plan[] = [
 ];
 
 const bottomItems = [
-  {
-    title: '100명 이상',
-    description: '별도 협의',
-    icon: <Users className="h-7 w-7 text-blue-500" />,
-  },
-  {
-    title: '초기 세팅 지원',
-    description: '엑셀 양식 제공 시',
-    icon: <Settings className="h-7 w-7 text-blue-500" />,
-  },
-  {
-    title: '도입 안정화 지원',
-    description: '사용 문의, 오류 수정, 운영 지원',
-    icon: <Headset className="h-7 w-7 text-blue-500" />,
-  },
+  { title: '100명 이상', description: '별도 협의', icon: <Users className="h-7 w-7 text-blue-500" /> },
+  { title: '초기 세팅 지원', description: '엑셀 양식 제공 시', icon: <Settings className="h-7 w-7 text-blue-500" /> },
+  { title: '도입 안정화 지원', description: '사용 문의, 오류 수정, 운영 지원', icon: <Headset className="h-7 w-7 text-blue-500" /> },
 ];
 
 export default function PricePage() {
+  const [selectedPlan, setSelectedPlan] = useState<Plan['key']>('standard');
+
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-900">
       <div className="mx-auto max-w-7xl">
@@ -71,33 +68,37 @@ export default function PricePage() {
           <p className="mt-4 text-lg text-slate-600">우리 회사에 맞는 플랜을 선택하고 모든 기능을 경험해보세요.</p>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-3">
+        <section className="grid items-stretch gap-6 lg:grid-cols-3">
           {plans.map((plan) => {
             const isGreen = plan.accent === 'green';
+            const isSelected = selectedPlan === plan.key;
+
             return (
               <article
-                key={plan.name}
-                className={`relative flex rounded-2xl border bg-white p-8 shadow-sm ${
-                  plan.highlighted ? 'border-blue-500 ring-1 ring-blue-400' : 'border-slate-200'
+                key={plan.key}
+                className={`relative h-full rounded-2xl border bg-white p-8 shadow-sm transition-all ${
+                  isSelected
+                    ? isGreen
+                      ? 'border-emerald-500 ring-1 ring-emerald-400'
+                      : 'border-blue-500 ring-1 ring-blue-400'
+                    : plan.recommended
+                      ? 'border-blue-500 ring-1 ring-blue-400'
+                      : 'border-slate-200'
                 }`}
               >
-                <div className="flex w-full flex-col">
-                  {plan.highlighted && (
+                <div className="flex h-full flex-col">
+                  {plan.recommended && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white">
                       추천 플랜
                     </div>
                   )}
 
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-                    {plan.icon}
-                  </div>
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">{plan.icon}</div>
 
                   <h2 className="text-center text-3xl font-bold">{plan.name}</h2>
                   <p className="mt-2 text-center text-xl text-slate-500">{plan.description}</p>
 
-                  <p className={`mt-7 text-center text-5xl font-extrabold ${isGreen ? 'text-emerald-600' : 'text-blue-600'}`}>
-                    {plan.monthlyPrice}
-                  </p>
+                  <p className={`mt-7 text-center text-5xl font-extrabold ${isGreen ? 'text-emerald-600' : 'text-blue-600'}`}>{plan.monthlyPrice}</p>
 
                   <div className="my-6 h-px bg-slate-200" />
 
@@ -114,18 +115,23 @@ export default function PricePage() {
                     ))}
                   </ul>
 
-                  <button
-                    type="button"
-                    className={`mt-12 h-14 rounded-xl border-2 text-xl font-bold transition-colors ${
-                      plan.highlighted
-                        ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
-                        : isGreen
-                          ? 'border-emerald-400 text-emerald-500 hover:bg-emerald-50'
-                          : 'border-blue-400 text-blue-500 hover:bg-blue-50'
-                    }`}
-                  >
-                    플랜 선택
-                  </button>
+                  <div className="mt-auto pt-12">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPlan(plan.key)}
+                      className={`h-14 w-full rounded-xl border-2 text-xl font-bold transition-colors ${
+                        isSelected
+                          ? isGreen
+                            ? 'border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600'
+                            : 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+                          : isGreen
+                            ? 'border-emerald-400 text-emerald-500 hover:bg-emerald-50'
+                            : 'border-blue-400 text-blue-500 hover:bg-blue-50'
+                      }`}
+                    >
+                      플랜 선택
+                    </button>
+                  </div>
                 </div>
               </article>
             );
