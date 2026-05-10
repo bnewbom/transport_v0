@@ -1,6 +1,6 @@
 export const ko = {
   nav: {
-    dashboard: '대시보드',
+    dashboard: '홈',
     clients: '거래처',
     drivers: '기사',
     vehicles: '차량',
