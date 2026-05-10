@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation';
 import { t } from '@/lib/i18n';
 import { navItems } from '@/lib/navigation';
 import { SidebarLayout, Sidebar, Header } from '@/components/sidebar';
-import { PageContent, Grid, StatCard } from '@/components/layout-shell';
+import { PageContent, Grid } from '@/components/layout-shell';
 import { Badge } from '@/components/data-list';
 import { dataService, initializeMockData } from '@/lib/data-service';
-import { formatKRW, formatDateTime, getStatusColor, getStatusLabel } from '@/lib/formatters';
+import { formatDateTime } from '@/lib/formatters';
 
 
 
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       sidebar={<Sidebar items={navItems} title={t('common.appName')} />}
       header={
         <Header
-          title={t('nav.dashboard')}
+          title={t('pages.dashboard.title')}
           rightContent={
             <button
               onClick={handleLogout}
@@ -84,35 +84,9 @@ export default function DashboardPage() {
       }
     >
       <PageContent>
-        {/* KPI Stats */}
-        <Grid columns={4} gap="md" className="mb-12">
-          <StatCard
-            label={t('pages.dashboard.totalIncome')}
-            value={formatKRW(stats.totalIncome)}
-            icon="💵"
-            trend={{ value: 12.5, isPositive: true }}
-          />
-          <StatCard
-            label={t('pages.dashboard.totalExpense')}
-            value={formatKRW(stats.totalExpense)}
-            icon="💸"
-            trend={{ value: -3.2, isPositive: false }}
-          />
-          <StatCard
-            label={t('pages.dashboard.activeDispatches')}
-            value={stats.activeDispatches}
-            icon="📦"
-          />
-          <StatCard
-            label={t('pages.dashboard.completedToday')}
-            value={stats.completedToday}
-            icon="✅"
-          />
-        </Grid>
-
         {/* Navigation Cards */}
         <div className="mb-12">
-          <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">빠른 메뉴</h3>
+          <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">메뉴</h3>
           <Grid columns={4} gap="md" className="md:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/clients"
